@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-// Use Inter font to match the clean, professional look of the Figma designs
+// inter font
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {

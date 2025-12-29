@@ -1,2 +1,2 @@
-import { handlers } from "@/auth"; // Imports from the file we just made
+import { handlers } from "@/auth";
 export const { GET, POST } = handlers;

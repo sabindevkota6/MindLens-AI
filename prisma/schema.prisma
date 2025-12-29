@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- ENUMS ---
+// enums
 enum Role {
   PATIENT
   COUNSELOR
@@ -26,24 +26,24 @@ enum AppointmentStatus {
   CANCELLED
 }
 
-// --- 1. CORE AUTHENTICATION ---
+// user model
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
   phoneNumber   String?
   passwordHash  String
   role          Role      @default(PATIENT)
-  image         String?   // Profile picture URL
+  image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // 1:1 Relations
+  // relations
   patientProfile   PatientProfile?
   counselorProfile CounselorProfile?
   adminProfile     AdminProfile?
 }
 
-// --- 2. PROFILES ---
+// profiles
 model PatientProfile {
   id          String   @id @default(cuid())
   userId      String   @unique
@@ -79,7 +79,7 @@ model AdminProfile {
   fullName  String
 }
 
-// --- 3. COUNSELOR METADATA ---
+// counselor specialties
 model SpecialtyType {
   id    Int    @id @default(autoincrement())
   name  String @unique 
@@ -87,7 +87,7 @@ model SpecialtyType {
   counselors CounselorSpecialty[]
 }
 
-// Bridge Table
+// bridge table
 model CounselorSpecialty {
   id                 String           @id @default(cuid())
   counselorProfileId String
@@ -96,7 +96,7 @@ model CounselorSpecialty {
   counselor          CounselorProfile @relation(fields: [counselorProfileId], references: [id], onDelete: Cascade)
   specialty          SpecialtyType    @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
 
-  @@unique([counselorProfileId, specialtyId]) 
+  @@unique([counselorProfileId, specialtyId])
 }
 
 model VerificationDocument {
@@ -108,7 +108,7 @@ model VerificationDocument {
   counselor          CounselorProfile @relation(fields: [counselorProfileId], references: [id], onDelete: Cascade)
 }
 
-// --- 4. BOOKING SYSTEM ---
+// booking system
 model AvailabilitySlot {
   id                 String           @id @default(cuid())
   counselorProfileId String
@@ -128,7 +128,7 @@ model Appointment {
   patientProfileId   String
   counselorProfileId String
   
-  meetingLink        String?           
+  meetingLink        String?
   status             AppointmentStatus @default(SCHEDULED)
   createdAt          DateTime          @default(now())
 
@@ -141,19 +141,19 @@ model Appointment {
 model Review {
   id            String      @id @default(cuid())
   appointmentId String      @unique
-  rating        Int         
+  rating        Int
   comment       String?     @db.Text
   createdAt     DateTime    @default(now())
 
   appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 }
 
-// --- 5. AI & EMOTION LOGS ---
+// emotion logs
 model EmotionLog {
   id               String         @id @default(cuid())
   patientProfileId String
-  humeAnalysisJson Json           
-  dominantEmotion  String         
+  humeAnalysisJson Json
+  dominantEmotion  String
   recordedAt       DateTime       @default(now())
   
   patient          PatientProfile @relation(fields: [patientProfileId], references: [id], onDelete: Cascade)

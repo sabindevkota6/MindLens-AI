@@ -6,7 +6,7 @@ import { RegisterSchema } from "@/lib/schemas";
 import { prisma } from "@/lib/prisma";
 
 export const register = async (values: z.infer<typeof RegisterSchema>) => {
-  // 1. Validate Fields
+  // validate input
   const validatedFields = RegisterSchema.safeParse(values);
 
   if (!validatedFields.success) {
@@ -15,7 +15,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
 
   const { email, password, name, role, phoneNumber } = validatedFields.data;
 
-  // 2. Check if User Exists
+  // check if email already exists
   const existingUser = await prisma.user.findUnique({
     where: { email },
   });
@@ -24,24 +24,21 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     return { error: "Email already in use!" };
   }
 
-  // 3. Hash Password
+  // hash the password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 4. Create User & Profile (Atomic Transaction)
-  // This matches your ERD logic: One User, One Profile
+  // create user
   try {
     await prisma.user.create({
       data: {
         email,
         passwordHash: hashedPassword,
         role,
-        phoneNumber, // <--- 2. Add this line to save it
-        // Conditionally create the profile based on role
+        phoneNumber,
         patientProfile: role === "PATIENT" ? {
           create: {
             fullName: name,
-            bio: "", 
-            // We set DOB later in settings
+            bio: "",
           }
         } : undefined,
         counselorProfile: role === "COUNSELOR" ? {
@@ -49,14 +46,13 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
             fullName: name,
             experienceYears: 0,
             hourlyRate: 0,
-            // Verification defaults to PENDING automatically
           }
         } : undefined,
       },
     });
 
     return { success: "User created! Please login." };
-    
+
   } catch (error) {
     console.error("Registration Error:", error);
     return { error: "Something went wrong during registration." };

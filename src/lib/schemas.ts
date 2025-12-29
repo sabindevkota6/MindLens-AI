@@ -5,7 +5,7 @@ export const RegisterSchema = z.object({
     .min(1, "Full name is required")
     .refine(
       (value) => value.trim().split(/\s+/).length >= 2,
-      "Please enter your full name (first and last name)"
+      "Enter first and last name"
     ),
   email: z.string()
     .min(1, "Email is required")
@@ -13,10 +13,10 @@ export const RegisterSchema = z.object({
   password: z.string()
     .min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string()
-    .min(1, "Please confirm your password"),
+    .min(1, "Confirm your password"),
   phoneNumber: z.string().optional(),
   role: z.enum(["PATIENT", "COUNSELOR"], {
-    message: "Please select a role",
+    message: "Select a role",
   }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
