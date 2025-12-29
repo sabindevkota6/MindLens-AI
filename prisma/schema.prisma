@@ -30,6 +30,7 @@ enum AppointmentStatus {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
+  phoneNumber   String?
   passwordHash  String
   role          Role      @default(PATIENT)
   image         String?   // Profile picture URL
@@ -47,6 +48,7 @@ model PatientProfile {
   id          String   @id @default(cuid())
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName    String
   dateOfBirth DateTime?
   bio         String?  @db.Text
   
