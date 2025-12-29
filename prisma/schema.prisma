@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+enum Role {
+  PATIENT
+  COUNSELOR
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+// --- 1. CORE AUTHENTICATION ---
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(PATIENT)
+  image         String?   // Profile picture URL
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 1:1 Relations
+  patientProfile   PatientProfile?
+  counselorProfile CounselorProfile?
+  adminProfile     AdminProfile?
+}
+
+// --- 2. PROFILES ---
+model PatientProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth DateTime?
+  bio         String?  @db.Text
+  
+  appointments Appointment[]
+  emotionLogs  EmotionLog[]
+}
+
+model CounselorProfile {
+  id                String             @id @default(cuid())
+  userId            String             @unique
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName          String
+  experienceYears   Int
+  hourlyRate        Decimal            @db.Decimal(10, 2)
+  verificationStatus VerificationStatus @default(PENDING)
+  bio               String?            @db.Text
+  
+  specialties       CounselorSpecialty[]
+  documents         VerificationDocument[]
+  slots             AvailabilitySlot[]
+  appointments      Appointment[]
+}
+
+model AdminProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName  String
+}
+
+// --- 3. COUNSELOR METADATA ---
+model SpecialtyType {
+  id    Int    @id @default(autoincrement())
+  name  String @unique 
+  
+  counselors CounselorSpecialty[]
+}
+
+// Bridge Table
+model CounselorSpecialty {
+  id                 String           @id @default(cuid())
+  counselorProfileId String
+  specialtyId        Int
+  
+  counselor          CounselorProfile @relation(fields: [counselorProfileId], references: [id], onDelete: Cascade)
+  specialty          SpecialtyType    @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@unique([counselorProfileId, specialtyId]) 
+}
+
+model VerificationDocument {
+  id                 String           @id @default(cuid())
+  counselorProfileId String
+  documentUrl        String           
+  uploadedAt         DateTime         @default(now())
+  
+  counselor          CounselorProfile @relation(fields: [counselorProfileId], references: [id], onDelete: Cascade)
+}
+
+// --- 4. BOOKING SYSTEM ---
+model AvailabilitySlot {
+  id                 String           @id @default(cuid())
+  counselorProfileId String
+  startTime          DateTime
+  endTime            DateTime
+  isBooked           Boolean          @default(false)
+  
+  counselor          CounselorProfile @relation(fields: [counselorProfileId], references: [id], onDelete: Cascade)
+  appointment        Appointment?
+  
+  @@index([startTime, endTime])
+}
+
+model Appointment {
+  id                 String            @id @default(cuid())
+  slotId             String            @unique
+  patientProfileId   String
+  counselorProfileId String
+  
+  meetingLink        String?           
+  status             AppointmentStatus @default(SCHEDULED)
+  createdAt          DateTime          @default(now())
+
+  slot               AvailabilitySlot  @relation(fields: [slotId], references: [id])
+  patient            PatientProfile    @relation(fields: [patientProfileId], references: [id])
+  counselor          CounselorProfile  @relation(fields: [counselorProfileId], references: [id])
+  review             Review?
+}
+
+model Review {
+  id            String      @id @default(cuid())
+  appointmentId String      @unique
+  rating        Int         
+  comment       String?     @db.Text
+  createdAt     DateTime    @default(now())
+
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+}
+
+// --- 5. AI & EMOTION LOGS ---
+model EmotionLog {
+  id               String         @id @default(cuid())
+  patientProfileId String
+  humeAnalysisJson Json           
+  dominantEmotion  String         
+  recordedAt       DateTime       @default(now())
+  
+  patient          PatientProfile @relation(fields: [patientProfileId], references: [id], onDelete: Cascade)
+}
