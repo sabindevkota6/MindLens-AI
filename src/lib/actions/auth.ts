@@ -13,7 +13,7 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     return { error: "Invalid fields!" };
   }
 
-  const { email, password, name, role, phoneNumber } = validatedFields.data;
+  const { email, password, name, role } = validatedFields.data;
 
   // check if email already exists
   const existingUser = await prisma.user.findUnique({
@@ -34,7 +34,6 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
         email,
         passwordHash: hashedPassword,
         role,
-        phoneNumber,
         patientProfile: role === "PATIENT" ? {
           create: {
             fullName: name,

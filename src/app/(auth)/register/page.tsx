@@ -9,7 +9,6 @@ import Image from "next/image";
 import {
   User,
   Mail,
-  Phone,
   Lock,
   Eye,
   EyeOff,
@@ -53,7 +52,6 @@ export default function RegisterPage() {
     defaultValues: {
       name: "",
       email: "",
-      phoneNumber: "",
       role: undefined,
       password: "",
       confirmPassword: "",
@@ -222,31 +220,6 @@ export default function RegisterPage() {
                           placeholder="Enter your email"
                           className="pl-11 h-10 bg-white border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal"
                           {...field}
-                        />
-                      </div>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {/* phone */}
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem className="space-y-1">
-                    <FormLabel className="text-gray-600 text-sm font-medium">
-                      Phone Number <span className="text-gray-400 font-normal">(Optional)</span>
-                    </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" strokeWidth={1.5} />
-                        <Input
-                          type="tel"
-                          placeholder="Enter your phone number"
-                          className="pl-11 h-10 bg-white border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal"
-                          {...field}
-                          value={field.value || ""}
                         />
                       </div>
                     </FormControl>

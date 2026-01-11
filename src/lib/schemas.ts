@@ -14,7 +14,7 @@ export const RegisterSchema = z.object({
     .min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string()
     .min(1, "Confirm your password"),
-  phoneNumber: z.string().optional(),
+  // phoneNumber removed
   role: z.enum(["PATIENT", "COUNSELOR"], {
     message: "Select a role",
   }),
@@ -30,4 +30,22 @@ export const LoginSchema = z.object({
   password: z.string().min(1, {
     message: "Password is required",
   }),
+});
+
+// counselor profile update schema (kept for legacy/edit usage if needed, or replaced by Onboarding)
+// counselor profile update schema
+export const CounselorProfileSchema = z.object({
+  fullName: z.string().min(1, "Full name is required"),
+  bio: z.string().min(10, "Bio must be at least 10 characters"),
+  experienceYears: z.coerce.number().min(0, "Experience cannot be negative"),
+  hourlyRate: z.coerce.number().min(1, "Hourly rate must be at least 1"),
+  specialties: z.array(z.coerce.number()).optional(), // Array of SpecialtyType IDs
+  customSpecialties: z.array(z.string()).optional(), // Array of new specialty names
+});
+
+export const CounselorOnboardingSchema = z.object({
+  bio: z.string().min(10, "Bio must be at least 10 characters"),
+  experienceYears: z.coerce.number().min(0, "Experience cannot be negative"),
+  hourlyRate: z.coerce.number().min(1, "Hourly rate must be at least 1"),
+  phoneNumber: z.string().optional(),
 });

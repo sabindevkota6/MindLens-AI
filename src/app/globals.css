@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -38,7 +42,7 @@
     --radius: 0.5rem;
 
     /* CUSTOM BRAND COLORS (Converted to HSL for Tailwind Compatibility) */
-    
+
     /* Deep Teal #00796B */
     --brand-teal: 174 100% 24%;
     /* Dark Teal #004D40 */
