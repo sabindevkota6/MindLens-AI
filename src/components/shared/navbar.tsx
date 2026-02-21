@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, UserCircle } from "lucide-react";
 
 const navLinks = [
   { href: "/dashboard", label: "Home" },
@@ -15,6 +15,11 @@ const navLinks = [
 
 export function AppNavbar() {
   const pathname = usePathname();
+
+  // derive profile link from current route
+  const profileHref = pathname.startsWith("/dashboard/counselor")
+    ? "/dashboard/counselor/profile"
+    : "/dashboard/patient/profile";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
@@ -50,15 +55,26 @@ export function AppNavbar() {
             ))}
           </div>
 
-          {/* Sign Out Button */}
-          <Button
-            variant="default"
-            className="rounded-full bg-black hover:bg-gray-800 text-white px-6 flex items-center gap-2"
-            onClick={() => signOut({ callbackUrl: "/" })}
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+          {/* Profile + Sign Out */}
+          <div className="flex items-center gap-3">
+            <Link href={profileHref}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full hover:bg-gray-100"
+              >
+                <UserCircle className="!w-6 !h-6 text-gray-700" />
+              </Button>
+            </Link>
+            <Button
+              variant="default"
+              className="rounded-full bg-black hover:bg-gray-800 text-white px-6 flex items-center gap-2"
+              onClick={() => signOut({ callbackUrl: "/" })}
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
     </nav>

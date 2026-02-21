@@ -28,9 +28,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const { email, password } = parsedCredentials.data;
 
-        // find user in database
+        // find user with profile name
         const user = await prisma.user.findUnique({
           where: { email },
+          include: {
+            patientProfile: { select: { fullName: true } },
+            counselorProfile: { select: { fullName: true } },
+            adminProfile: { select: { fullName: true } },
+          },
         });
 
         if (!user) return null;
@@ -39,10 +44,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
 
         if (passwordsMatch) {
+          const name =
+            user.patientProfile?.fullName ||
+            user.counselorProfile?.fullName ||
+            user.adminProfile?.fullName ||
+            user.email;
+
           return {
             id: user.id,
             email: user.email,
             role: user.role,
+            name,
           };
         }
 

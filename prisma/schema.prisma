@@ -51,6 +51,7 @@ model PatientProfile {
   fullName    String
   dateOfBirth DateTime?
   bio         String?  @db.Text
+  isOnboarded Boolean  @default(false)
   
   appointments Appointment[]
   emotionLogs  EmotionLog[]
@@ -61,10 +62,12 @@ model CounselorProfile {
   userId            String             @unique
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName          String
+  dateOfBirth       DateTime?
   experienceYears   Int
   hourlyRate        Decimal            @db.Decimal(10, 2)
   verificationStatus VerificationStatus @default(PENDING)
   bio               String?            @db.Text
+  isOnboarded       Boolean            @default(false)
   
   specialties       CounselorSpecialty[]
   documents         VerificationDocument[]

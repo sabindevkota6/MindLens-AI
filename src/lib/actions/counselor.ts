@@ -129,18 +129,21 @@ export const completeCounselorProfile = async (values: z.infer<typeof CounselorO
 
     const validated = CounselorOnboardingSchema.safeParse(values);
     if (!validated.success) {
+        console.error("Validation errors:", validated.error.flatten());
         return { error: "Invalid fields" };
     }
 
     try {
         await prisma.$transaction(async (tx) => {
             // update profile
-            await tx.counselorProfile.update({
+            const updatedProfile = await tx.counselorProfile.update({
                 where: { userId: session.user.id },
                 data: {
                     bio: validated.data.bio,
                     experienceYears: validated.data.experienceYears,
                     hourlyRate: validated.data.hourlyRate,
+                    dateOfBirth: new Date(validated.data.dateOfBirth),
+                    isOnboarded: true,
                 },
             });
 
@@ -152,6 +155,40 @@ export const completeCounselorProfile = async (values: z.infer<typeof CounselorO
                         phoneNumber: validated.data.phoneNumber,
                     },
                 });
+            }
+
+            // Handle specialties
+            if (validated.data.specialties || validated.data.customSpecialties) {
+                let allSpecialtyIds = [...(validated.data.specialties || [])];
+
+                // Process custom specialties
+                if (validated.data.customSpecialties && validated.data.customSpecialties.length > 0) {
+                    for (const name of validated.data.customSpecialties) {
+                        if (!name.trim()) continue;
+                        const specialty = await tx.specialtyType.upsert({
+                            where: { name: name.trim() },
+                            update: {},
+                            create: { name: name.trim() },
+                        });
+                        allSpecialtyIds.push(specialty.id);
+                    }
+                }
+
+                const uniqueSpecialties = Array.from(new Set(allSpecialtyIds));
+
+                // Remove existing specialties first to avoid unique constraint violations
+                await tx.counselorSpecialty.deleteMany({
+                    where: { counselorProfileId: updatedProfile.id },
+                });
+
+                if (uniqueSpecialties.length > 0) {
+                    await tx.counselorSpecialty.createMany({
+                        data: uniqueSpecialties.map((specialtyId) => ({
+                            counselorProfileId: updatedProfile.id,
+                            specialtyId,
+                        })),
+                    });
+                }
             }
         });
 

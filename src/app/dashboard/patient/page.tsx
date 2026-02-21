@@ -1,5 +1,6 @@
-"use client";
-
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { getPatientProfile } from "@/lib/actions/patient";
 import Link from "next/link";
 import Image from "next/image";
 import { AppNavbar } from "@/components/shared/navbar";
@@ -7,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Video, UserCheck, Clock, VideoIcon, Brain } from "lucide-react";
 
-export default function PatientDashboardPage() {
+export default async function PatientDashboardPage() {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  const profile = await getPatientProfile();
+  const isProfileComplete = profile?.isOnboarded && profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/patient/onboarding");
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AppNavbar />
