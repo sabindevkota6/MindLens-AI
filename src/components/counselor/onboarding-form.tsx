@@ -29,7 +29,7 @@ import {
   FileText,
   Mail,
   Briefcase,
-  DollarSign,
+  Wallet,
   ArrowRight,
   ArrowLeft,
   Star,
@@ -68,6 +68,7 @@ export default function CounselorOnboardingForm({
   const form = useForm<OnboardingValues>({
     resolver: zodResolver(CounselorOnboardingSchema) as any,
     defaultValues: {
+      professionalTitle: "",
       bio: "",
       experienceYears: 0,
       hourlyRate: 0,
@@ -266,6 +267,24 @@ export default function CounselorOnboardingForm({
 
         {/* ── STEP 2: Professional Details ── */}
         <div className={step === 2 ? "block space-y-5" : "hidden"}>
+          {/* Professional Title */}
+          <FormField
+            control={form.control}
+            name="professionalTitle"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-primary" />
+                  Professional Title <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. Clinical Psychologist, Licensed Therapist, Psychiatrist" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {/* Bio */}
           <FormField
             control={form.control}
@@ -313,8 +332,8 @@ export default function CounselorOnboardingForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-primary" />
-                    Hourly Rate ($) <span className="text-red-500">*</span>
+                    <Wallet className="w-4 h-4 text-primary" />
+                    Hourly Rate (NPR) <span className="text-red-500">*</span>
                   </FormLabel>
                   <FormControl>
                     <Input type="number" min={1} {...field} />

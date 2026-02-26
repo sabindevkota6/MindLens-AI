@@ -62,6 +62,7 @@ model CounselorProfile {
   userId            String             @unique
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName          String
+  professionalTitle String?            
   dateOfBirth       DateTime?
   experienceYears   Int
   hourlyRate        Decimal            @db.Decimal(10, 2)

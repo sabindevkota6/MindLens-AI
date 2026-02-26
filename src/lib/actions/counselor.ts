@@ -14,6 +14,9 @@ export const getCounselorProfile = async () => {
     const profile = await prisma.counselorProfile.findUnique({
         where: { userId: session.user.id },
         include: {
+            user: {
+                select: { email: true, phoneNumber: true, createdAt: true }
+            },
             documents: true,
             specialties: {
                 include: {
@@ -61,11 +64,21 @@ export const updateCounselorProfile = async (values: z.infer<typeof CounselorPro
                 where: { userId: session.user.id },
                 data: {
                     fullName: validated.data.fullName,
+                    professionalTitle: validated.data.professionalTitle,
                     bio: validated.data.bio,
                     experienceYears: validated.data.experienceYears,
                     hourlyRate: validated.data.hourlyRate,
+                    dateOfBirth: new Date(validated.data.dateOfBirth),
                 },
             });
+
+            // Update user phone number
+            if (validated.data.phoneNumber !== undefined) {
+                await tx.user.update({
+                    where: { id: session.user.id },
+                    data: { phoneNumber: validated.data.phoneNumber || null },
+                });
+            }
 
             // Handle Specialties Relation
             if (validated.data.specialties || validated.data.customSpecialties) {
@@ -139,6 +152,7 @@ export const completeCounselorProfile = async (values: z.infer<typeof CounselorO
             const updatedProfile = await tx.counselorProfile.update({
                 where: { userId: session.user.id },
                 data: {
+                    professionalTitle: validated.data.professionalTitle,
                     bio: validated.data.bio,
                     experienceYears: validated.data.experienceYears,
                     hourlyRate: validated.data.hourlyRate,
@@ -237,4 +251,180 @@ export const uploadVerificationDoc = async (formData: FormData) => {
 
     revalidatePath("/dashboard/counselor");
     return { success: "Document uploaded successfully!" };
+};
+
+export interface SearchCounselorsParams {
+    query?: string;
+    specialtyId?: number;
+    availabilityDate?: string;
+    minRating?: number;
+    minExperience?: number;
+    sortBy?: "rating" | "experience";
+    sortOrder?: "asc" | "desc";
+    page?: number;
+    perPage?: number;
+}
+
+export interface CounselorCard {
+    id: string;
+    fullName: string;
+    professionalTitle: string | null;
+    bio: string | null;
+    experienceYears: number;
+    hourlyRate: number;
+    verificationStatus: string;
+    specialties: string[];
+    avgRating: number;
+    totalReviews: number;
+    nextAvailable: string | null;
+}
+
+export interface SearchCounselorsResult {
+    counselors: CounselorCard[];
+    total: number;
+    page: number;
+    totalPages: number;
+}
+
+export const searchCounselors = async (
+    params: SearchCounselorsParams
+): Promise<SearchCounselorsResult> => {
+    const session = await auth();
+    if (!session) return { counselors: [], total: 0, page: 1, totalPages: 0 };
+
+    const {
+        query,
+        specialtyId,
+        availabilityDate,
+        minRating,
+        minExperience,
+        sortBy,
+        sortOrder = "desc",
+        page = 1,
+        perPage = 6,
+    } = params;
+
+    const where: any = {
+        verificationStatus: "VERIFIED",
+        isOnboarded: true,
+    };
+
+    if (query && query.trim()) {
+        const search = query.trim();
+        where.OR = [
+            { fullName: { contains: search, mode: "insensitive" } },
+            { professionalTitle: { contains: search, mode: "insensitive" } },
+            {
+                specialties: {
+                    some: {
+                        specialty: {
+                            name: { contains: search, mode: "insensitive" },
+                        },
+                    },
+                },
+            },
+        ];
+    }
+
+    if (specialtyId) {
+        where.specialties = {
+            some: { specialtyId },
+        };
+    }
+
+    if (availabilityDate) {
+        const date = new Date(availabilityDate);
+        const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const endOfDay = new Date(startOfDay);
+        endOfDay.setDate(endOfDay.getDate() + 1);
+
+        where.slots = {
+            some: {
+                startTime: { gte: startOfDay },
+                endTime: { lt: endOfDay },
+                isBooked: false,
+            },
+        };
+    }
+
+    if (minExperience && minExperience > 0) {
+        where.experienceYears = { gte: minExperience };
+    }
+
+    const allProfiles = await prisma.counselorProfile.findMany({
+        where,
+        include: {
+            specialties: {
+                include: { specialty: true },
+            },
+            slots: {
+                where: {
+                    startTime: { gte: new Date() },
+                    isBooked: false,
+                },
+                orderBy: { startTime: "asc" },
+                take: 1,
+            },
+            appointments: {
+                include: {
+                    review: true,
+                },
+            },
+        },
+    });
+
+    let counselors: CounselorCard[] = allProfiles.map((p) => {
+        const reviews = p.appointments
+            .map((a) => a.review)
+            .filter((r): r is NonNullable<typeof r> => r !== null);
+        const avgRating =
+            reviews.length > 0
+                ? Math.round(
+                      (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10
+                  ) / 10
+                : 0;
+
+        return {
+            id: p.id,
+            fullName: p.fullName,
+            professionalTitle: p.professionalTitle,
+            bio: p.bio,
+            experienceYears: p.experienceYears,
+            hourlyRate: Number(p.hourlyRate),
+            verificationStatus: p.verificationStatus,
+            specialties: p.specialties.map((s) => s.specialty.name),
+            avgRating,
+            totalReviews: reviews.length,
+            nextAvailable: p.slots[0]?.startTime?.toISOString() || null,
+        };
+    });
+
+    if (minRating && minRating > 0) {
+        counselors = counselors.filter((c) => c.avgRating >= minRating);
+    }
+
+    if (sortBy === "rating") {
+        counselors.sort((a, b) =>
+            sortOrder === "desc" ? b.avgRating - a.avgRating : a.avgRating - b.avgRating
+        );
+    } else if (sortBy === "experience") {
+        counselors.sort((a, b) =>
+            sortOrder === "desc"
+                ? b.experienceYears - a.experienceYears
+                : a.experienceYears - b.experienceYears
+        );
+    } else {
+        counselors.sort((a, b) => b.avgRating - a.avgRating);
+    }
+
+    const total = counselors.length;
+    const totalPages = Math.ceil(total / perPage);
+    const paginated = counselors.slice((page - 1) * perPage, page * perPage);
+
+    return {
+        counselors: paginated,
+        total,
+        page,
+        totalPages,
+    };
 };

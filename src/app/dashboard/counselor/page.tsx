@@ -13,6 +13,7 @@ export default async function CounselorDashboard() {
   const profile = await getCounselorProfile();
   const isProfileComplete =
     profile?.isOnboarded &&
+    profile?.professionalTitle &&
     profile?.bio &&
     profile?.experienceYears != null &&
     profile?.hourlyRate != null &&

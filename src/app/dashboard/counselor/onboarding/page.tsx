@@ -14,6 +14,7 @@ export default async function CounselorOnboardingPage() {
   ]);
   const isProfileComplete =
     profile?.isOnboarded &&
+    profile?.professionalTitle &&
     profile?.bio &&
     profile?.experienceYears != null &&
     profile?.hourlyRate != null &&
