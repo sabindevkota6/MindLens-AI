@@ -7,6 +7,7 @@ import { AppNavbar } from "@/components/shared/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, Video, UserCheck, Clock, VideoIcon, Brain } from "lucide-react";
+import { FindCounselors } from "@/components/patient/find-counselors";
 
 export default async function PatientDashboardPage() {
   const session = await auth();
@@ -137,6 +138,9 @@ export default async function PatientDashboardPage() {
           </Card>
         </div>
       </section>
+
+      {/* Find Counselors Section */}
+      <FindCounselors />
 
     </div>
   );
