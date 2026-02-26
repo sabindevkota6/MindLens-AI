@@ -2,18 +2,63 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { PatientOnboardingSchema } from "@/lib/schemas";
+import { PatientOnboardingSchema, PatientProfileSchema } from "@/lib/schemas";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
-// get patient profile data
 export const getPatientProfile = async () => {
   const session = await auth();
   if (!session || session.user.role !== "PATIENT") return null;
 
   return await prisma.patientProfile.findUnique({
     where: { userId: session.user.id },
+    include: {
+      user: {
+        select: { email: true, phoneNumber: true, createdAt: true },
+      },
+    },
   });
+};
+
+export const updatePatientProfile = async (
+  values: z.infer<typeof PatientProfileSchema>
+) => {
+  const session = await auth();
+  if (!session || session.user.role !== "PATIENT") {
+    return { error: "Unauthorized" };
+  }
+
+  const validated = PatientProfileSchema.safeParse(values);
+  if (!validated.success) {
+    return { error: "Invalid fields" };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.patientProfile.update({
+        where: { userId: session.user.id },
+        data: {
+          fullName: validated.data.fullName,
+          dateOfBirth: new Date(validated.data.dateOfBirth),
+          bio: validated.data.bio || null,
+        },
+      });
+
+      if (validated.data.phoneNumber !== undefined) {
+        await tx.user.update({
+          where: { id: session.user.id },
+          data: { phoneNumber: validated.data.phoneNumber || null },
+        });
+      }
+    });
+
+    revalidatePath("/dashboard/patient/profile");
+    revalidatePath("/dashboard/patient");
+    return { success: "Profile updated successfully!" };
+  } catch (error) {
+    console.error("Patient profile update error:", error);
+    return { error: "Failed to update profile." };
+  }
 };
 
 // complete patient profile (onboarding)
@@ -31,6 +76,15 @@ export const completePatientProfile = async (
   }
 
   try {
+    // Verify profile exists before updating
+    const existingProfile = await prisma.patientProfile.findUnique({
+      where: { userId: session.user.id },
+    });
+
+    if (!existingProfile) {
+      return { error: "Profile not found. Please log out and register again." };
+    }
+
     await prisma.$transaction(async (tx) => {
       // update patient profile
       await tx.patientProfile.update({
