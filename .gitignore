@@ -48,4 +48,7 @@ next-env.d.ts
 
 # prisma
 /src/generated/prisma
+
+# AI coding agent instructions
+.github/copilot-instructions.md
 prisma.config.ts
