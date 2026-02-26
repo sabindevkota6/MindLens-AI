@@ -429,29 +429,31 @@ export function FindCounselors() {
 
         {/* Counselor Cards Grid */}
         {isPending ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="border-0 border-l-4 border-l-gray-200 shadow-sm animate-pulse rounded-2xl">
-                <CardContent className="p-6 flex flex-col items-center">
-                  <div className="w-20 h-20 rounded-full bg-gray-200 mb-4" />
-                  <div className="w-full space-y-2">
+              <Card key={i} className="border-0 shadow-sm animate-pulse rounded-2xl overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="bg-gray-100 flex flex-col items-center pt-8 pb-4">
+                    <div className="w-20 h-20 rounded-full bg-gray-200" />
+                  </div>
+                  <div className="px-6 pt-4 pb-6 space-y-3">
                     <div className="h-4 bg-gray-200 rounded w-2/3" />
                     <div className="h-3 bg-gray-200 rounded w-1/2" />
-                    <div className="h-3 bg-gray-200 rounded w-1/3 mt-3" />
-                    <div className="flex gap-2 mt-3">
+                    <div className="h-3 bg-gray-200 rounded w-1/3" />
+                    <div className="flex gap-2">
                       <div className="h-6 bg-gray-200 rounded-full w-16" />
                       <div className="h-6 bg-gray-200 rounded-full w-16" />
                     </div>
-                    <div className="h-3 bg-gray-200 rounded w-2/5 mt-2" />
-                    <div className="h-3 bg-gray-200 rounded w-1/3 mt-1" />
-                    <div className="h-11 bg-gray-200 rounded-xl mt-4" />
+                    <div className="h-3 bg-gray-200 rounded w-2/5" />
+                    <div className="h-3 bg-gray-200 rounded w-1/3" />
+                    <div className="h-11 bg-gray-200 rounded-xl mt-2" />
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : counselors.length === 0 ? (
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-sm max-w-7xl mx-auto">
             <CardContent className="py-16 text-center">
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
                 <Search className="w-7 h-7 text-gray-400" />
@@ -475,7 +477,7 @@ export function FindCounselors() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {counselors.map((counselor) => {
               const avatarColor = getAvatarColor(counselor.fullName);
               const availability = formatNextAvailable(counselor.nextAvailable);
@@ -483,14 +485,14 @@ export function FindCounselors() {
               return (
                 <Card
                   key={counselor.id}
-                  className="border-0 border-l-4 border-l-primary shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group rounded-2xl"
+                  className="border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group rounded-2xl py-0"
                 >
                   <CardContent className="p-0">
-                    {/* Avatar Section */}
-                    <div className="relative flex flex-col items-center pt-8 pb-4">
+                    {/* Avatar Section - mint green background */}
+                    <div className="relative flex flex-col items-center pt-8 pb-5 bg-teal-50">
                       {/* Verified Badge - top right */}
                       {counselor.verificationStatus === "VERIFIED" && (
-                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-primary text-white text-xs font-medium px-2.5 py-1 rounded-full">
                           <ShieldCheck className="w-3.5 h-3.5" />
                           Verified
                         </div>
@@ -499,7 +501,7 @@ export function FindCounselors() {
                       {/* Circular Avatar */}
                       <div
                         className={cn(
-                          "w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold ring-4",
+                          "w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold ring-4",
                           avatarColor.bg,
                           avatarColor.ring,
                           avatarColor.text
@@ -510,8 +512,8 @@ export function FindCounselors() {
                     </div>
 
                     {/* Name & Professional Title */}
-                    <div className="px-6 pb-2 space-y-0.5">
-                      <h3 className="font-semibold text-gray-900 text-base">
+                    <div className="px-6 pt-5 pb-2 space-y-0.5">
+                      <h3 className="font-semibold text-gray-900 text-lg">
                         {counselor.fullName}
                       </h3>
                       {counselor.professionalTitle && (
@@ -541,7 +543,7 @@ export function FindCounselors() {
 
                     {/* Specialty Badges */}
                     {counselor.specialties.length > 0 && (
-                      <div className="px-6 pb-3">
+                      <div className="px-6 pb-4">
                         <div className="flex flex-wrap gap-1.5">
                           {counselor.specialties.slice(0, 3).map((spec) => (
                             <Badge
@@ -564,16 +566,22 @@ export function FindCounselors() {
                       </div>
                     )}
 
+                    {/* Divider */}
+                    <div className="mx-6 border-t border-gray-100" />
+
                     {/* Experience */}
-                    <div className="px-6 pb-2">
+                    <div className="px-6 py-4">
                       <div className="flex items-center gap-1.5 text-sm text-gray-600">
                         <Clock className="w-3.5 h-3.5 text-gray-400" />
                         <span>{counselor.experienceYears} years experience</span>
                       </div>
                     </div>
 
+                    {/* Divider */}
+                    <div className="mx-6 border-t border-gray-100" />
+
                     {/* Availability */}
-                    <div className="px-6 pb-4">
+                    <div className="px-6 py-4">
                       {availability ? (
                         <p className="text-sm font-medium text-primary">
                           {availability}
