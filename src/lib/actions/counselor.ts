@@ -428,3 +428,186 @@ export const searchCounselors = async (
         totalPages,
     };
 };
+
+// ─── Public Counselor Detail (for patients viewing a counselor) ───
+
+export interface CounselorDetail {
+    id: string;
+    fullName: string;
+    professionalTitle: string | null;
+    bio: string | null;
+    experienceYears: number;
+    hourlyRate: number;
+    verificationStatus: string;
+    specialties: string[];
+    avgRating: number;
+    totalReviews: number;
+    totalAppointments: number;
+    nextAvailable: string | null;
+    memberSince: string;
+}
+
+export const getCounselorDetail = async (counselorId: string): Promise<CounselorDetail | null> => {
+    const session = await auth();
+    if (!session) return null;
+
+    const profile = await prisma.counselorProfile.findUnique({
+        where: { id: counselorId },
+        include: {
+            user: { select: { createdAt: true } },
+            specialties: { include: { specialty: true } },
+            slots: {
+                where: {
+                    startTime: { gte: new Date() },
+                    isBooked: false,
+                },
+                orderBy: { startTime: "asc" },
+                take: 1,
+            },
+            appointments: {
+                include: { review: true },
+            },
+        },
+    });
+
+    if (!profile) return null;
+
+    const reviews = profile.appointments
+        .map((a) => a.review)
+        .filter((r): r is NonNullable<typeof r> => r !== null);
+    const avgRating =
+        reviews.length > 0
+            ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10
+            : 0;
+
+    return {
+        id: profile.id,
+        fullName: profile.fullName,
+        professionalTitle: profile.professionalTitle,
+        bio: profile.bio,
+        experienceYears: profile.experienceYears,
+        hourlyRate: Number(profile.hourlyRate),
+        verificationStatus: profile.verificationStatus,
+        specialties: profile.specialties.map((s) => s.specialty.name),
+        avgRating,
+        totalReviews: reviews.length,
+        totalAppointments: profile.appointments.filter((a) => a.status === "COMPLETED").length,
+        nextAvailable: profile.slots[0]?.startTime?.toISOString() || null,
+        memberSince: profile.user.createdAt.toISOString(),
+    };
+};
+
+// ─── Get Available Slots for a Counselor ───
+
+export interface AvailableSlot {
+    id: string;
+    startTime: string;
+    endTime: string;
+}
+
+export const getCounselorAvailableSlots = async (
+    counselorId: string,
+    dateStr: string
+): Promise<AvailableSlot[]> => {
+    const session = await auth();
+    if (!session) return [];
+
+    const date = new Date(dateStr);
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    const slots = await prisma.availabilitySlot.findMany({
+        where: {
+            counselorProfileId: counselorId,
+            startTime: { gte: startOfDay },
+            endTime: { lt: endOfDay },
+            isBooked: false,
+        },
+        orderBy: { startTime: "asc" },
+    });
+
+    return slots.map((s) => ({
+        id: s.id,
+        startTime: s.startTime.toISOString(),
+        endTime: s.endTime.toISOString(),
+    }));
+};
+
+// ─── Get dates that have available slots (for calendar highlighting) ───
+
+export const getCounselorAvailableDates = async (
+    counselorId: string,
+    month: number,
+    year: number
+): Promise<string[]> => {
+    const session = await auth();
+    if (!session) return [];
+
+    const startOfMonth = new Date(year, month, 1);
+    const endOfMonth = new Date(year, month + 1, 1);
+
+    const slots = await prisma.availabilitySlot.findMany({
+        where: {
+            counselorProfileId: counselorId,
+            startTime: { gte: startOfMonth },
+            endTime: { lt: endOfMonth },
+            isBooked: false,
+        },
+        select: { startTime: true },
+    });
+
+    // Return unique date strings
+    const dates = new Set(
+        slots.map((s) => s.startTime.toISOString().split("T")[0])
+    );
+    return Array.from(dates);
+};
+
+// ─── Book an appointment ───
+
+export const bookAppointment = async (slotId: string) => {
+    const session = await auth();
+    if (!session || session.user.role !== "PATIENT") {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        const patientProfile = await prisma.patientProfile.findUnique({
+            where: { userId: session.user.id },
+        });
+
+        if (!patientProfile) {
+            return { error: "Patient profile not found" };
+        }
+
+        const slot = await prisma.availabilitySlot.findUnique({
+            where: { id: slotId },
+        });
+
+        if (!slot || slot.isBooked) {
+            return { error: "This slot is no longer available" };
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.availabilitySlot.update({
+                where: { id: slotId },
+                data: { isBooked: true },
+            });
+
+            await tx.appointment.create({
+                data: {
+                    slotId,
+                    patientProfileId: patientProfile.id,
+                    counselorProfileId: slot.counselorProfileId,
+                    status: "SCHEDULED",
+                },
+            });
+        });
+
+        revalidatePath("/dashboard/patient");
+        return { success: "Appointment booked successfully!" };
+    } catch {
+        return { error: "Failed to book appointment. Please try again." };
+    }
+};

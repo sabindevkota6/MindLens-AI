@@ -6,7 +6,7 @@ import Image from "next/image";
 import { AppNavbar } from "@/components/shared/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Video, UserCheck, Clock, VideoIcon, Brain } from "lucide-react";
+import { CheckCircle2, UserCheck, Clock, VideoIcon, Brain } from "lucide-react";
 import { FindCounselors } from "@/components/patient/find-counselors";
 
 export default async function PatientDashboardPage() {
@@ -43,12 +43,12 @@ export default async function PatientDashboardPage() {
                   Take an Emotion Test
                 </Button>
               </Link>
-              <Link href="/book-session">
+              <a href="#find-counselors">
                 <Button className="bg-[#004D40] hover:bg-[#00352D] text-white border-0 rounded-xl px-8 py-6 text-base font-semibold flex items-center gap-2.5 shadow-lg shadow-black/20 min-w-[240px]">
-                  <Video className="w-5 h-5" />
+                  <VideoIcon className="w-5 h-5" />
                   Book a Session
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
         </div>

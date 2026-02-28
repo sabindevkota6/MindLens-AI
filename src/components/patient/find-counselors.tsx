@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   searchCounselors,
   getAllSpecialties,
@@ -47,6 +48,7 @@ interface Specialty {
 }
 
 export function FindCounselors() {
+  const router = useRouter();
   const [counselors, setCounselors] = useState<CounselorCard[]>([]);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [total, setTotal] = useState(0);
@@ -166,7 +168,7 @@ export function FindCounselors() {
     const colors = [
       { bg: "bg-blue-100", ring: "ring-blue-200", text: "text-blue-600" },
       { bg: "bg-emerald-100", ring: "ring-emerald-200", text: "text-emerald-600" },
-      { bg: "bg-rose-100", ring: "ring-rose-200", text: "text-rose-600" },
+      { bg: "bg-slate-100", ring: "ring-slate-200", text: "text-slate-600" },
       { bg: "bg-violet-100", ring: "ring-violet-200", text: "text-violet-600" },
       { bg: "bg-amber-100", ring: "ring-amber-200", text: "text-amber-600" },
       { bg: "bg-cyan-100", ring: "ring-cyan-200", text: "text-cyan-600" },
@@ -198,7 +200,7 @@ export function FindCounselors() {
   };
 
   return (
-    <section className="px-3 sm:px-4 lg:px-6 py-16 bg-gray-50">
+    <section id="find-counselors" className="px-3 sm:px-4 lg:px-6 py-16 bg-gray-50">
       <div className="max-w-[90rem] mx-auto space-y-8">
 
         {/* Green Search & Filters Card */}
@@ -595,7 +597,10 @@ export function FindCounselors() {
 
                     {/* Book Session Button */}
                     <div className="px-6 pb-6">
-                      <Button className="w-full h-11 rounded-xl font-semibold text-sm">
+                      <Button
+                        onClick={() => router.push(`/dashboard/patient/counselor/${counselor.id}`)}
+                        className="w-full h-11 rounded-xl font-semibold text-sm"
+                      >
                         Book Session
                       </Button>
                     </div>

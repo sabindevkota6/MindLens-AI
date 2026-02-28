@@ -116,9 +116,9 @@ export default async function CounselorProfilePage() {
               <div className="flex flex-col md:flex-row gap-8">
                 {/* Avatar + Role Badge */}
                 <div className="flex flex-col items-center gap-3">
-                  <Avatar className="w-28 h-28 border-4 border-primary/10 shadow-lg">
+                  <Avatar className="w-28 h-28 border-4 border-slate-200 shadow-lg">
                     <AvatarImage src={session.user.image || ""} />
-                    <AvatarFallback className="bg-primary text-white text-2xl font-bold">
+                    <AvatarFallback className="bg-slate-100 text-slate-600 text-2xl font-bold">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
