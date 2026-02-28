@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getPatientProfile } from "@/lib/actions/patient";
 import Link from "next/link";
 import Image from "next/image";
-import { AppNavbar } from "@/components/shared/navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, UserCheck, Clock, VideoIcon, Brain } from "lucide-react";
@@ -19,8 +18,6 @@ export default async function PatientDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AppNavbar />
-
       {/* Hero Banner */}
       <section className="pt-16">
         <div className="bg-primary px-6 lg:px-8 py-20 pb-24">

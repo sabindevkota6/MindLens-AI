@@ -1,7 +1,6 @@
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import { getCounselorProfile } from "@/lib/actions/counselor";
-import { AppNavbar } from "@/components/shared/navbar";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import Link from "next/link";
@@ -24,7 +23,6 @@ export default async function CounselorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AppNavbar />
       <div className="pt-24 flex flex-col items-center justify-center p-4">
         <div className="text-center space-y-6 max-w-md">
           <div className="space-y-2">

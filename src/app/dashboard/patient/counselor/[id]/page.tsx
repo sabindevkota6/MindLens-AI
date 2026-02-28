@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getCounselorDetail } from "@/lib/actions/counselor";
-import { AppNavbar } from "@/components/shared/navbar";
 import { CounselorDetailView } from "@/components/patient/counselor-detail-view";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -21,7 +20,6 @@ export default async function CounselorPage({ params }: CounselorPageProps) {
   if (!counselor) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <AppNavbar />
         <div className="pt-24 flex flex-col items-center justify-center space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">
             Counselor not found
@@ -42,8 +40,6 @@ export default async function CounselorPage({ params }: CounselorPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AppNavbar />
-
       {/* Header */}
       <div className="bg-primary pt-20 pb-10 px-6 lg:px-8">
         <div className="max-w-6xl mx-auto space-y-4">

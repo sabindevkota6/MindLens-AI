@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getCounselorProfile } from "@/lib/actions/counselor";
-import { AppNavbar } from "@/components/shared/navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -72,8 +71,6 @@ export default async function CounselorProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AppNavbar />
-
       {/* Green banner header */}
       <div className="bg-primary pt-20 pb-10 px-4 md:px-8">
         <div className="max-w-4xl mx-auto space-y-4">

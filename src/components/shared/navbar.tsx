@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -8,13 +9,41 @@ import { Button } from "@/components/ui/button";
 import { LogOut, UserCircle } from "lucide-react";
 
 const navLinks = [
-  { href: "/dashboard", label: "Home" },
-  { href: "/emotion-test", label: "Emotion-Test" },
-  { href: "/book-session", label: "Book a Session" },
+  { href: "/dashboard", label: "Home", match: "home" },
+  { href: "/emotion-test", label: "Emotion-Test", match: "emotion" },
+  { href: "/dashboard/patient#find-counselors", label: "Book a Session", match: "book" },
 ];
 
 export function AppNavbar() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  const [sectionVisible, setSectionVisible] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  // Scroll-spy to track if #find-counselors is in view
+  useEffect(() => {
+    const el = document.getElementById("find-counselors");
+    if (!el) { setSectionVisible(false); return; }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setSectionVisible(entry.isIntersecting),
+      { rootMargin: "-40% 0px -40% 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [pathname]);
+
+  const isPatientDash = pathname === "/dashboard/patient";
+  const isProfile = pathname.includes("/profile");
+
+  const getActive = (match: string) => {
+    if (!mounted) return false;
+    if (match === "book") return isPatientDash && sectionVisible;
+    if (match === "home") return isPatientDash && !sectionVisible;
+    if (match === "emotion") return pathname.startsWith("/emotion-test");
+    return false;
+  };
 
   // derive profile link from current route
   const profileHref = pathname.startsWith("/dashboard/counselor")
@@ -40,19 +69,22 @@ export function AppNavbar() {
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-sm font-medium transition-colors ${
-                  pathname.startsWith(link.href)
-                    ? "text-primary"
-                    : "text-gray-700 hover:text-primary"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const active = getActive(link.match);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`relative text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors pb-1 ${
+                    active
+                      ? "after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full"
+                      : ""
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Profile + Sign Out */}
@@ -61,7 +93,11 @@ export function AppNavbar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full hover:bg-gray-100"
+                className={`relative rounded-full hover:bg-gray-100 ${
+                  mounted && isProfile
+                    ? "after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-5 after:h-0.5 after:bg-primary after:rounded-full"
+                    : ""
+                }`}
               >
                 <UserCircle className="!w-6 !h-6 text-gray-700" />
               </Button>
