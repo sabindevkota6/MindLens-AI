@@ -343,6 +343,7 @@ export const searchCounselors = async (
                 startTime: { gte: startOfDay },
                 endTime: { lt: endOfDay },
                 isBooked: false,
+                isBlocked: false,
             },
         };
     }
@@ -361,6 +362,7 @@ export const searchCounselors = async (
                 where: {
                     startTime: { gte: new Date() },
                     isBooked: false,
+                    isBlocked: false,
                 },
                 orderBy: { startTime: "asc" },
                 take: 1,
@@ -460,6 +462,7 @@ export const getCounselorDetail = async (counselorId: string): Promise<Counselor
                 where: {
                     startTime: { gte: new Date() },
                     isBooked: false,
+                    isBlocked: false,
                 },
                 orderBy: { startTime: "asc" },
                 take: 1,
@@ -523,6 +526,7 @@ export const getCounselorAvailableSlots = async (
             startTime: { gte: startOfDay },
             endTime: { lt: endOfDay },
             isBooked: false,
+            isBlocked: false,
         },
         orderBy: { startTime: "asc" },
     });
@@ -553,6 +557,7 @@ export const getCounselorAvailableDates = async (
             startTime: { gte: startOfMonth },
             endTime: { lt: endOfMonth },
             isBooked: false,
+            isBlocked: false,
         },
         select: { startTime: true },
     });
@@ -585,7 +590,7 @@ export const bookAppointment = async (slotId: string) => {
             where: { id: slotId },
         });
 
-        if (!slot || slot.isBooked) {
+        if (!slot || slot.isBooked || slot.isBlocked) {
             return { error: "This slot is no longer available" };
         }
 
@@ -610,4 +615,320 @@ export const bookAppointment = async (slotId: string) => {
     } catch {
         return { error: "Failed to book appointment. Please try again." };
     }
+};
+
+// ─── Recurring Schedule Management ───
+
+export const getRecurringSchedule = async () => {
+    const session = await auth();
+    if (!session || session.user.role !== "COUNSELOR") return [];
+
+    const profile = await prisma.counselorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+    });
+    if (!profile) return [];
+
+    const schedules = await prisma.recurringSchedule.findMany({
+        where: { counselorProfileId: profile.id },
+        orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+    });
+
+    return schedules.map((s) => ({
+        dayOfWeek: s.dayOfWeek,
+        startTime: s.startTime,
+        endTime: s.endTime,
+    }));
+};
+
+// ─── Save Recurring Schedule & Generate Slots ───
+
+const SLOT_DURATION_MINUTES = 60;
+const GENERATION_WEEKS = 4;
+
+function getDayName(dayOfWeek: number): string {
+    return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][dayOfWeek];
+}
+
+interface ScheduleEntry {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+}
+
+function generateSlotsFromSchedule(
+    entries: ScheduleEntry[],
+    numWeeks: number
+): { startTime: Date; endTime: Date }[] {
+    const slots: { startTime: Date; endTime: Date }[] = [];
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayDow = today.getDay();
+
+    for (const entry of entries) {
+        const daysUntilFirst = (entry.dayOfWeek - todayDow + 7) % 7;
+
+        for (let week = 0; week < numWeeks; week++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() + daysUntilFirst + week * 7);
+
+            const [startH, startM] = entry.startTime.split(":").map(Number);
+            const [endH, endM] = entry.endTime.split(":").map(Number);
+            const endMinutes = endH * 60 + endM;
+
+            let currentH = startH;
+            let currentM = startM;
+
+            while (true) {
+                const slotStart = new Date(date);
+                slotStart.setHours(currentH, currentM, 0, 0);
+
+                const slotEnd = new Date(slotStart);
+                slotEnd.setMinutes(slotEnd.getMinutes() + SLOT_DURATION_MINUTES);
+
+                const slotEndMinutes = slotEnd.getHours() * 60 + slotEnd.getMinutes();
+                if (slotEndMinutes > endMinutes || slotEnd.getDate() !== date.getDate()) break;
+
+                // Only add future slots
+                if (slotStart > now) {
+                    slots.push({ startTime: slotStart, endTime: slotEnd });
+                }
+
+                currentM += SLOT_DURATION_MINUTES;
+                currentH += Math.floor(currentM / 60);
+                currentM %= 60;
+            }
+        }
+    }
+
+    return slots;
+}
+
+function hasOverlappingBlocks(blocks: { startTime: string; endTime: string }[]): boolean {
+    const sorted = [...blocks].sort((a, b) => a.startTime.localeCompare(b.startTime));
+    for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].startTime < sorted[i - 1].endTime) return true;
+    }
+    return false;
+}
+
+export const saveRecurringSchedule = async (values: {
+    schedule: {
+        dayOfWeek: number;
+        enabled: boolean;
+        timeBlocks: { startTime: string; endTime: string }[];
+    }[];
+}) => {
+    const session = await auth();
+    if (!session || session.user.role !== "COUNSELOR") {
+        return { error: "Unauthorized" };
+    }
+
+    if (!values.schedule || values.schedule.length !== 7) {
+        return { error: "Invalid schedule data" };
+    }
+
+    // Validate each enabled day
+    for (const day of values.schedule) {
+        if (!day.enabled) continue;
+
+        if (day.timeBlocks.length === 0) {
+            return { error: `${getDayName(day.dayOfWeek)} is enabled but has no time blocks` };
+        }
+
+        for (const block of day.timeBlocks) {
+            if (!/^\d{2}:\d{2}$/.test(block.startTime) || !/^\d{2}:\d{2}$/.test(block.endTime)) {
+                return { error: `${getDayName(day.dayOfWeek)}: Invalid time format` };
+            }
+
+            const [sh, sm] = block.startTime.split(":").map(Number);
+            const [eh, em] = block.endTime.split(":").map(Number);
+            const startMins = sh * 60 + sm;
+            const endMins = eh * 60 + em;
+
+            if (endMins <= startMins) {
+                return { error: `${getDayName(day.dayOfWeek)}: End time must be after start time` };
+            }
+            if (endMins - startMins < SLOT_DURATION_MINUTES) {
+                return { error: `${getDayName(day.dayOfWeek)}: Time block must be at least 1 hour` };
+            }
+        }
+
+        if (hasOverlappingBlocks(day.timeBlocks)) {
+            return { error: `${getDayName(day.dayOfWeek)}: Time blocks overlap each other` };
+        }
+    }
+
+    const profile = await prisma.counselorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+    });
+    if (!profile) return { error: "Profile not found" };
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            // 1. Delete existing recurring schedules
+            await tx.recurringSchedule.deleteMany({
+                where: { counselorProfileId: profile.id },
+            });
+
+            // 2. Create new recurring schedule entries
+            const entries: ScheduleEntry[] = values.schedule
+                .filter((d) => d.enabled)
+                .flatMap((d) =>
+                    d.timeBlocks.map((tb) => ({
+                        dayOfWeek: d.dayOfWeek,
+                        startTime: tb.startTime,
+                        endTime: tb.endTime,
+                    }))
+                );
+
+            if (entries.length > 0) {
+                await tx.recurringSchedule.createMany({
+                    data: entries.map((e) => ({
+                        counselorProfileId: profile.id,
+                        dayOfWeek: e.dayOfWeek,
+                        startTime: e.startTime,
+                        endTime: e.endTime,
+                    })),
+                });
+            }
+
+            // 3. Delete future unbooked slots (keep booked ones)
+            await tx.availabilitySlot.deleteMany({
+                where: {
+                    counselorProfileId: profile.id,
+                    startTime: { gt: new Date() },
+                    isBooked: false,
+                },
+            });
+
+            // 4. Generate new slots from schedule
+            const newSlots = generateSlotsFromSchedule(entries, GENERATION_WEEKS);
+
+            // 5. Avoid conflicts with remaining booked slots
+            if (newSlots.length > 0) {
+                const bookedSlots = await tx.availabilitySlot.findMany({
+                    where: {
+                        counselorProfileId: profile.id,
+                        startTime: { gt: new Date() },
+                        isBooked: true,
+                    },
+                    select: { startTime: true, endTime: true },
+                });
+
+                const nonConflicting = newSlots.filter(
+                    (slot) =>
+                        !bookedSlots.some(
+                            (booked) =>
+                                slot.startTime < booked.endTime && slot.endTime > booked.startTime
+                        )
+                );
+
+                if (nonConflicting.length > 0) {
+                    await tx.availabilitySlot.createMany({
+                        data: nonConflicting.map((s) => ({
+                            counselorProfileId: profile.id,
+                            startTime: s.startTime,
+                            endTime: s.endTime,
+                        })),
+                    });
+                }
+            }
+        });
+
+        revalidatePath("/dashboard/counselor/availability");
+        revalidatePath("/dashboard/counselor");
+        return { success: "Schedule saved and slots generated!" };
+    } catch (error) {
+        console.error("Save schedule error:", error);
+        return { error: "Failed to save schedule. Please try again." };
+    }
+};
+
+// ─── Get Availability Slots for Management (Counselor View) ───
+
+export interface ManagedSlot {
+    id: string;
+    startTime: string;
+    endTime: string;
+    isBooked: boolean;
+    isBlocked: boolean;
+    patientName?: string;
+}
+
+export const getAvailabilitySlots = async (
+    weekStartStr: string
+): Promise<ManagedSlot[]> => {
+    const session = await auth();
+    if (!session || session.user.role !== "COUNSELOR") return [];
+
+    const profile = await prisma.counselorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+    });
+    if (!profile) return [];
+
+    const weekStart = new Date(weekStartStr);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const slots = await prisma.availabilitySlot.findMany({
+        where: {
+            counselorProfileId: profile.id,
+            startTime: { gte: weekStart },
+            endTime: { lte: weekEnd },
+        },
+        include: {
+            appointment: {
+                include: {
+                    patient: { select: { fullName: true } },
+                },
+            },
+        },
+        orderBy: { startTime: "asc" },
+    });
+
+    return slots.map((s) => ({
+        id: s.id,
+        startTime: s.startTime.toISOString(),
+        endTime: s.endTime.toISOString(),
+        isBooked: s.isBooked,
+        isBlocked: s.isBlocked,
+        patientName: s.appointment?.patient?.fullName,
+    }));
+};
+
+// ─── Toggle Slot Block/Unblock ───
+
+export const toggleSlotBlock = async (slotId: string) => {
+    const session = await auth();
+    if (!session || session.user.role !== "COUNSELOR") {
+        return { error: "Unauthorized" };
+    }
+
+    const profile = await prisma.counselorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+    });
+    if (!profile) return { error: "Profile not found" };
+
+    const slot = await prisma.availabilitySlot.findUnique({
+        where: { id: slotId },
+    });
+
+    if (!slot) return { error: "Slot not found" };
+    if (slot.counselorProfileId !== profile.id) return { error: "Unauthorized" };
+    if (slot.isBooked) return { error: "Cannot modify a booked slot" };
+    if (slot.startTime <= new Date()) return { error: "Cannot modify past slots" };
+
+    await prisma.availabilitySlot.update({
+        where: { id: slotId },
+        data: { isBlocked: !slot.isBlocked },
+    });
+
+    revalidatePath("/dashboard/counselor/availability");
+    return {
+        success: slot.isBlocked ? "Slot unblocked successfully" : "Slot blocked successfully",
+    };
 };

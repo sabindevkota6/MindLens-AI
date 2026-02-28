@@ -8,21 +8,30 @@ import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { LogOut, UserCircle } from "lucide-react";
 
-const navLinks = [
-  { href: "/dashboard", label: "Home", match: "home" },
+const patientNavLinks = [
+  { href: "/dashboard/patient", label: "Home", match: "home" },
   { href: "/emotion-test", label: "Emotion-Test", match: "emotion" },
   { href: "/dashboard/patient#find-counselors", label: "Book a Session", match: "book" },
 ];
 
-export function AppNavbar() {
+const counselorNavLinks = [
+  { href: "/dashboard/counselor", label: "Home", match: "home" },
+  { href: "/dashboard/counselor/availability", label: "Availability", match: "availability" },
+];
+
+export function AppNavbar({ role }: { role: string }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [sectionVisible, setSectionVisible] = useState(false);
 
+  const isCounselor = role === "COUNSELOR";
+  const navLinks = isCounselor ? counselorNavLinks : patientNavLinks;
+
   useEffect(() => setMounted(true), []);
 
-  // Scroll-spy to track if #find-counselors is in view
+  // Scroll-spy to track if #find-counselors is in view (patient only)
   useEffect(() => {
+    if (isCounselor) return;
     const el = document.getElementById("find-counselors");
     if (!el) { setSectionVisible(false); return; }
 
@@ -32,21 +41,29 @@ export function AppNavbar() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [pathname]);
+  }, [pathname, isCounselor]);
 
-  const isPatientDash = pathname === "/dashboard/patient";
+  const dashboardPath = isCounselor ? "/dashboard/counselor" : "/dashboard/patient";
+  const isOnDashboard = pathname === dashboardPath;
   const isProfile = pathname.includes("/profile");
 
   const getActive = (match: string) => {
     if (!mounted) return false;
-    if (match === "book") return isPatientDash && sectionVisible;
-    if (match === "home") return isPatientDash && !sectionVisible;
+
+    if (isCounselor) {
+      if (match === "home") return pathname === "/dashboard/counselor";
+      if (match === "availability") return pathname.startsWith("/dashboard/counselor/availability");
+      return false;
+    }
+
+    // Patient logic
+    if (match === "book") return isOnDashboard && sectionVisible;
+    if (match === "home") return isOnDashboard && !sectionVisible;
     if (match === "emotion") return pathname.startsWith("/emotion-test");
     return false;
   };
 
-  // derive profile link from current route
-  const profileHref = pathname.startsWith("/dashboard/counselor")
+  const profileHref = isCounselor
     ? "/dashboard/counselor/profile"
     : "/dashboard/patient/profile";
 
@@ -55,7 +72,7 @@ export function AppNavbar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center -ml-8">
+          <Link href={dashboardPath} className="flex items-center -ml-8">
             <Image
               src="/MindLens-AI_ Logo.svg"
               alt="MindLens AI"
@@ -77,7 +94,7 @@ export function AppNavbar() {
                   href={link.href}
                   className={`relative text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors pb-1 ${
                     active
-                      ? "after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full"
+                      ? "after:absolute after:bottom-0 after:left-0 after:w-full after:h-[3px] after:bg-primary after:rounded-full"
                       : ""
                   }`}
                 >

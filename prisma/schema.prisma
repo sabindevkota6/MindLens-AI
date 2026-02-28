@@ -74,6 +74,7 @@ model CounselorProfile {
   documents         VerificationDocument[]
   slots             AvailabilitySlot[]
   appointments      Appointment[]
+  recurringSchedules RecurringSchedule[]
 }
 
 model AdminProfile {
@@ -119,11 +120,26 @@ model AvailabilitySlot {
   startTime          DateTime
   endTime            DateTime
   isBooked           Boolean          @default(false)
+  isBlocked          Boolean          @default(false)
   
   counselor          CounselorProfile @relation(fields: [counselorProfileId], references: [id], onDelete: Cascade)
   appointment        Appointment?
   
   @@index([startTime, endTime])
+  @@index([counselorProfileId, startTime])
+}
+
+model RecurringSchedule {
+  id                 String           @id @default(cuid())
+  counselorProfileId String
+  dayOfWeek          Int              // 0=Sunday, 1=Monday, ... 6=Saturday
+  startTime          String           // "HH:mm" format
+  endTime            String           // "HH:mm" format
+  
+  counselor          CounselorProfile @relation(fields: [counselorProfileId], references: [id], onDelete: Cascade)
+  
+  @@unique([counselorProfileId, dayOfWeek, startTime])
+  @@index([counselorProfileId])
 }
 
 model Appointment {
