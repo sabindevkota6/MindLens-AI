@@ -24,12 +24,17 @@ export default async function AvailabilityPage() {
   const session = await auth();
   if (!session?.user || session.user.role !== "COUNSELOR") redirect("/login");
 
-  const profile = await getCounselorProfile();
-  if (!profile?.isOnboarded) redirect("/dashboard/counselor/onboarding");
-
-  const schedule = await getRecurringSchedule();
   const weekStart = getWeekStart();
-  const initialSlots = await getAvailabilitySlots(weekStart.toISOString());
+  const userId = session.user.id;
+
+  // Run ALL queries in parallel instead of sequentially
+  const [profile, schedule, initialSlots] = await Promise.all([
+    getCounselorProfile(),
+    getRecurringSchedule(userId),
+    getAvailabilitySlots(weekStart.toISOString(), userId),
+  ]);
+
+  if (!profile?.isOnboarded) redirect("/dashboard/counselor/onboarding");
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">

@@ -1,4 +1,3 @@
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getCounselorDetail } from "@/lib/actions/counselor";
 import { CounselorDetailView } from "@/components/patient/counselor-detail-view";
@@ -11,9 +10,6 @@ interface CounselorPageProps {
 }
 
 export default async function CounselorPage({ params }: CounselorPageProps) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-
   const { id } = await params;
   const counselor = await getCounselorDetail(id);
 

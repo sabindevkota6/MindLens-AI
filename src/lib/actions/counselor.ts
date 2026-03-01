@@ -37,9 +37,6 @@ export const getCounselorProfile = async () => {
 };
 
 export const getAllSpecialties = async () => {
-    const session = await auth();
-    if (!session) return [];
-
     return await prisma.specialtyType.findMany({
         orderBy: { name: 'asc' }
     });
@@ -367,24 +364,31 @@ export const searchCounselors = async (
                 orderBy: { startTime: "asc" },
                 take: 1,
             },
-            appointments: {
-                include: {
-                    review: true,
-                },
-            },
         },
     });
 
+    // Batch-fetch review stats for all matched counselors in ONE aggregate query
+    const profileIds = allProfiles.map((p) => p.id);
+    const reviewStats = profileIds.length > 0
+        ? await prisma.$queryRaw<{ counselorProfileId: string; avgRating: number; totalReviews: number }[]>`
+            SELECT a."counselorProfileId",
+                   COALESCE(AVG(r.rating), 0)::float AS "avgRating",
+                   COUNT(r.id)::int AS "totalReviews"
+            FROM "Appointment" a
+            JOIN "Review" r ON r."appointmentId" = a.id
+            WHERE a."counselorProfileId" = ANY(${profileIds})
+            GROUP BY a."counselorProfileId"
+          `
+        : [];
+
+    const statsMap = new Map(
+        reviewStats.map((s) => [s.counselorProfileId, s])
+    );
+
     let counselors: CounselorCard[] = allProfiles.map((p) => {
-        const reviews = p.appointments
-            .map((a) => a.review)
-            .filter((r): r is NonNullable<typeof r> => r !== null);
-        const avgRating =
-            reviews.length > 0
-                ? Math.round(
-                      (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10
-                  ) / 10
-                : 0;
+        const stats = statsMap.get(p.id);
+        const avgRating = stats ? Math.round(stats.avgRating * 10) / 10 : 0;
+        const totalReviews = stats?.totalReviews ?? 0;
 
         return {
             id: p.id,
@@ -396,7 +400,7 @@ export const searchCounselors = async (
             verificationStatus: p.verificationStatus,
             specialties: p.specialties.map((s) => s.specialty.name),
             avgRating,
-            totalReviews: reviews.length,
+            totalReviews,
             nextAvailable: p.slots[0]?.startTime?.toISOString() || null,
         };
     });
@@ -453,35 +457,44 @@ export const getCounselorDetail = async (counselorId: string): Promise<Counselor
     const session = await auth();
     if (!session) return null;
 
-    const profile = await prisma.counselorProfile.findUnique({
-        where: { id: counselorId },
-        include: {
-            user: { select: { createdAt: true } },
-            specialties: { include: { specialty: true } },
-            slots: {
-                where: {
-                    startTime: { gte: new Date() },
-                    isBooked: false,
-                    isBlocked: false,
+    // Run profile query, review stats, and completed count in PARALLEL
+    const [profile, reviewStats, completedCount] = await Promise.all([
+        prisma.counselorProfile.findUnique({
+            where: { id: counselorId },
+            include: {
+                user: { select: { createdAt: true } },
+                specialties: { include: { specialty: true } },
+                slots: {
+                    where: {
+                        startTime: { gte: new Date() },
+                        isBooked: false,
+                        isBlocked: false,
+                    },
+                    orderBy: { startTime: "asc" },
+                    take: 1,
                 },
-                orderBy: { startTime: "asc" },
-                take: 1,
             },
-            appointments: {
-                include: { review: true },
+        }),
+        prisma.review.aggregate({
+            _avg: { rating: true },
+            _count: { id: true },
+            where: {
+                appointment: { counselorProfileId: counselorId },
             },
-        },
-    });
+        }),
+        prisma.appointment.count({
+            where: {
+                counselorProfileId: counselorId,
+                status: "COMPLETED",
+            },
+        }),
+    ]);
 
     if (!profile) return null;
 
-    const reviews = profile.appointments
-        .map((a) => a.review)
-        .filter((r): r is NonNullable<typeof r> => r !== null);
-    const avgRating =
-        reviews.length > 0
-            ? Math.round((reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length) * 10) / 10
-            : 0;
+    const avgRating = reviewStats._avg.rating
+        ? Math.round(reviewStats._avg.rating * 10) / 10
+        : 0;
 
     return {
         id: profile.id,
@@ -493,8 +506,8 @@ export const getCounselorDetail = async (counselorId: string): Promise<Counselor
         verificationStatus: profile.verificationStatus,
         specialties: profile.specialties.map((s) => s.specialty.name),
         avgRating,
-        totalReviews: reviews.length,
-        totalAppointments: profile.appointments.filter((a) => a.status === "COMPLETED").length,
+        totalReviews: reviewStats._count.id,
+        totalAppointments: completedCount,
         nextAvailable: profile.slots[0]?.startTime?.toISOString() || null,
         memberSince: profile.user.createdAt.toISOString(),
     };
@@ -619,12 +632,16 @@ export const bookAppointment = async (slotId: string) => {
 
 // ─── Recurring Schedule Management ───
 
-export const getRecurringSchedule = async () => {
-    const session = await auth();
-    if (!session || session.user.role !== "COUNSELOR") return [];
+export const getRecurringSchedule = async (userId?: string) => {
+    let uid = userId;
+    if (!uid) {
+        const session = await auth();
+        if (!session || session.user.role !== "COUNSELOR") return [];
+        uid = session.user.id;
+    }
 
     const profile = await prisma.counselorProfile.findUnique({
-        where: { userId: session.user.id },
+        where: { userId: uid },
         select: { id: true },
     });
     if (!profile) return [];
@@ -858,13 +875,18 @@ export interface ManagedSlot {
 }
 
 export const getAvailabilitySlots = async (
-    weekStartStr: string
+    weekStartStr: string,
+    userId?: string
 ): Promise<ManagedSlot[]> => {
-    const session = await auth();
-    if (!session || session.user.role !== "COUNSELOR") return [];
+    let uid = userId;
+    if (!uid) {
+        const session = await auth();
+        if (!session || session.user.role !== "COUNSELOR") return [];
+        uid = session.user.id;
+    }
 
     const profile = await prisma.counselorProfile.findUnique({
-        where: { userId: session.user.id },
+        where: { userId: uid },
         select: { id: true },
     });
     if (!profile) return [];
