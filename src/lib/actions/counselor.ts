@@ -607,6 +607,28 @@ export const bookAppointment = async (slotId: string) => {
             return { error: "This slot is no longer available" };
         }
 
+        // Prevent multiple bookings on the same day
+        const slotDate = new Date(slot.startTime);
+        const startOfDay = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate());
+        const endOfDay = new Date(startOfDay);
+        endOfDay.setDate(endOfDay.getDate() + 1);
+
+        const existingAppointment = await prisma.appointment.findFirst({
+            where: {
+                patientProfileId: patientProfile.id,
+                counselorProfileId: slot.counselorProfileId,
+                status: { not: "CANCELLED" },
+                slot: {
+                    startTime: { gte: startOfDay },
+                    endTime: { lt: endOfDay },
+                },
+            },
+        });
+
+        if (existingAppointment) {
+            return { error: "You already have an appointment with this counselor on this day. Please choose a different date or different counselor." };
+        }
+
         await prisma.$transaction(async (tx) => {
             await tx.availabilitySlot.update({
                 where: { id: slotId },
