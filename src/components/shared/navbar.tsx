@@ -12,11 +12,13 @@ const patientNavLinks = [
   { href: "/dashboard/patient", label: "Home", match: "home" },
   { href: "/emotion-test", label: "Emotion-Test", match: "emotion" },
   { href: "/dashboard/patient#find-counselors", label: "Book a Session", match: "book" },
+  { href: "/dashboard/patient/appointments", label: "My Appointments", match: "appointments" },
 ];
 
 const counselorNavLinks = [
   { href: "/dashboard/counselor", label: "Home", match: "home" },
   { href: "/dashboard/counselor/availability", label: "Availability", match: "availability" },
+  { href: "/dashboard/counselor/appointments", label: "My Appointments", match: "appointments" },
 ];
 
 export function AppNavbar({ role }: { role: string }) {

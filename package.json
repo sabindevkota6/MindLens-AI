@@ -12,6 +12,7 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@daily-co/daily-js": "^0.87.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -19,6 +20,7 @@
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
+    "@react-email/components": "^1.0.8",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -31,6 +33,7 @@
     "react-day-picker": "^9.13.2",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.69.0",
+    "resend": "^6.9.3",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.2.1"
   },

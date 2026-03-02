@@ -593,6 +593,7 @@ export const bookAppointment = async (slotId: string) => {
     try {
         const patientProfile = await prisma.patientProfile.findUnique({
             where: { userId: session.user.id },
+            include: { user: { select: { email: true } } },
         });
 
         if (!patientProfile) {
@@ -601,13 +602,18 @@ export const bookAppointment = async (slotId: string) => {
 
         const slot = await prisma.availabilitySlot.findUnique({
             where: { id: slotId },
+            include: {
+                counselor: {
+                    select: { fullName: true, professionalTitle: true },
+                },
+            },
         });
 
         if (!slot || slot.isBooked || slot.isBlocked) {
             return { error: "This slot is no longer available" };
         }
 
-        // Prevent multiple bookings on the same day
+        // Prevent multiple bookings on the same day with same counselor
         const slotDate = new Date(slot.startTime);
         const startOfDay = new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate());
         const endOfDay = new Date(startOfDay);
@@ -629,24 +635,62 @@ export const bookAppointment = async (slotId: string) => {
             return { error: "You already have an appointment with this counselor on this day. Please choose a different date or different counselor." };
         }
 
+        // Create Daily.co room for the meeting
+        let meetingLink: string | null = null;
+        try {
+            const { createDailyRoom } = await import("@/lib/daily");
+            const room = await createDailyRoom(slot.endTime);
+            meetingLink = room.url;
+        } catch (err) {
+            console.error("Failed to create Daily room:", err);
+            // Continue without meeting link — it can be set later
+        }
+
+        let appointmentId: string = "";
+
         await prisma.$transaction(async (tx) => {
             await tx.availabilitySlot.update({
                 where: { id: slotId },
                 data: { isBooked: true },
             });
 
-            await tx.appointment.create({
+            const created = await tx.appointment.create({
                 data: {
                     slotId,
                     patientProfileId: patientProfile.id,
                     counselorProfileId: slot.counselorProfileId,
+                    meetingLink,
                     status: "SCHEDULED",
                 },
             });
+            appointmentId = created.id;
         });
 
+        // Send confirmation email (non-blocking)
+        if (meetingLink && appointmentId) {
+            const { format } = await import("date-fns");
+            const { bookingConfirmationEmail } = await import("@/lib/email-templates");
+            const { sendEmail } = await import("@/lib/email");
+
+            // Use in-app meeting page URL so the 30-min time gate applies
+            const inAppMeetingUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/meeting/${appointmentId}`;
+
+            sendEmail({
+                to: patientProfile.user.email,
+                subject: "Appointment Confirmed - MindLens AI",
+                html: bookingConfirmationEmail({
+                    patientName: patientProfile.fullName,
+                    counselorName: slot.counselor.fullName,
+                    counselorTitle: slot.counselor.professionalTitle || "Counselor",
+                    date: format(slot.startTime, "MMMM d, yyyy"),
+                    time: format(slot.startTime, "h:mm a"),
+                    meetingLink: inAppMeetingUrl,
+                }),
+            }).catch(console.error);
+        }
+
         revalidatePath("/dashboard/patient");
-        return { success: "Appointment booked successfully!" };
+        return { success: "Appointment booked successfully! You will receive the meeting link via email. You can join the meeting 30 minutes before the scheduled time." };
     } catch {
         return { error: "Failed to book appointment. Please try again." };
     }

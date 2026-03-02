@@ -85,3 +85,18 @@ export const PatientProfileSchema = z.object({
   phoneNumber: z.string().max(15, "Phone number is too long").optional(),
   bio: z.string().optional(),
 });
+
+// ─── Appointment Schemas ───
+
+export const ReviewSchema = z.object({
+  rating: z.coerce.number().min(1, "Rating is required").max(5, "Maximum rating is 5"),
+  comment: z.string().max(2000, "Comment is too long").optional(),
+});
+
+export const PatientNoteSchema = z.object({
+  note: z.string().min(1, "Note cannot be empty").max(1000, "Note is too long (max 1000 characters)"),
+});
+
+export const ReportSchema = z.object({
+  reason: z.string().min(1, "Please provide a reason").max(2000, "Reason is too long (max 2000 characters)"),
+});
