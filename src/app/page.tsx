@@ -764,7 +764,7 @@ export default function Home() {
               <h4 className="font-semibold mb-4 text-base">Take a Test</h4>
               <ul className="space-y-3 text-sm text-white/90">
                 <li><Link href="#" className="hover:text-white transition-colors">AI-Emotion Analysis</Link></li>
-                <li><Link href="#" className="hover:text-white transition-colors">Recommendation System</Link></li>
+                <li><Link href="#" className="hover:text-white transition-colors">Get Recommendations</Link></li>
               </ul>
             </div>
 
