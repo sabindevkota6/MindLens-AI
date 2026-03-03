@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, UserCheck, Clock, VideoIcon, Brain } from "lucide-react";
+import { CheckCircle2, UserCheck, Clock, VideoIcon, Brain, CircleCheckBig } from "lucide-react";
 import { FindCounselors } from "@/components/patient/find-counselors";
 
 export default async function PatientDashboardPage() {
@@ -138,6 +138,58 @@ export default async function PatientDashboardPage() {
 
       {/* Find Counselors Section */}
       <FindCounselors />
+
+      {/* AI-Powered Matching CTA */}
+      <section className="bg-white px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto">
+          <Card className="border-0 shadow-sm rounded-3xl overflow-hidden bg-gradient-to-br from-[#00796B] to-[#009688]">
+            <CardContent className="p-0">
+              <div className="grid lg:grid-cols-2 gap-0">
+                {/* Left - Content */}
+                <div className="p-10 lg:p-14 flex flex-col justify-center space-y-6">
+                  <div>
+                    <span className="inline-block bg-white/15 text-white text-sm font-medium px-5 py-2 rounded-full backdrop-blur-sm">
+                      AI-Powered Matching
+                    </span>
+                  </div>
+
+                  <h2 className="text-3xl lg:text-[2.5rem] font-bold text-white leading-tight">
+                    Tired of Manually Searching for the Right Counselor?
+                  </h2>
+
+                  <p className="text-white/75 text-base leading-relaxed max-w-lg">
+                    Take an emotion test now and let AI find the best match for your emotional needs. Our advanced algorithm analyzes your responses to connect you with the perfect mental health professional.
+                  </p>
+
+                  <div className="pt-2 space-y-4">
+                    <Link href="/emotion-test">
+                      <Button className="bg-white hover:bg-gray-50 text-primary border-0 rounded-xl px-8 py-6 text-base font-semibold gap-2.5 shadow-lg shadow-black/10">
+                        <CircleCheckBig className="w-5 h-5" />
+                        Take an Emotion Test
+                      </Button>
+                    </Link>
+                    <div className="flex items-center gap-2 text-white/60 text-sm">
+                      <Clock className="w-4 h-4" />
+                      <span>Takes only 5 minutes • 100% Confidential</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right - Illustration */}
+                <div className="relative hidden lg:flex items-center justify-center p-8">
+                  <Image
+                    src="/ai-matching-illustration.png"
+                    alt="AI-powered counselor matching"
+                    width={500}
+                    height={400}
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
     </div>
   );

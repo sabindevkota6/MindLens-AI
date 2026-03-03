@@ -33,6 +33,7 @@
     "react-day-picker": "^9.13.2",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.69.0",
+    "recharts": "^2.15.4",
     "resend": "^6.9.3",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.2.1"

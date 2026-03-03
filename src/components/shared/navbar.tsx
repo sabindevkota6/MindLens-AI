@@ -55,6 +55,7 @@ export function AppNavbar({ role }: { role: string }) {
     if (isCounselor) {
       if (match === "home") return pathname === "/dashboard/counselor";
       if (match === "availability") return pathname.startsWith("/dashboard/counselor/availability");
+      if (match === "appointments") return pathname.startsWith("/dashboard/counselor/appointments");
       return false;
     }
 
@@ -62,6 +63,7 @@ export function AppNavbar({ role }: { role: string }) {
     if (match === "book") return isOnDashboard && sectionVisible;
     if (match === "home") return isOnDashboard && !sectionVisible;
     if (match === "emotion") return pathname.startsWith("/emotion-test");
+    if (match === "appointments") return pathname.startsWith("/dashboard/patient/appointments");
     return false;
   };
 
@@ -114,7 +116,7 @@ export function AppNavbar({ role }: { role: string }) {
                 size="icon"
                 className={`relative rounded-full hover:bg-gray-100 ${
                   mounted && isProfile
-                    ? "after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-5 after:h-0.5 after:bg-primary after:rounded-full"
+                    ? "after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-5 after:h-[3px] after:bg-primary after:rounded-full"
                     : ""
                 }`}
               >
