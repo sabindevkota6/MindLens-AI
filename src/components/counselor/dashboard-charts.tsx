@@ -2,8 +2,8 @@
 
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Pie, PieChart, Cell, Area, AreaChart } from "recharts";
-import { Calendar, DollarSign, Star, Users, TrendingUp, Clock, CalendarCheck, CalendarX, CircleAlert, MessageSquare } from "lucide-react";
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Pie, PieChart, Cell } from "recharts";
+import { Calendar, Wallet, Star, Users, TrendingUp, Clock, CalendarCheck, CalendarX, CircleAlert, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 
@@ -58,11 +58,11 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-// format month label from "2025-01" to "Jan"
+// format month label from "2025-01" to "Jan '25"
 function formatMonth(month: string) {
   const [year, m] = month.split("-");
   const date = new Date(Number(year), Number(m) - 1);
-  return format(date, "MMM");
+  return format(date, "MMM ''yy");
 }
 
 export function CounselorDashboardCharts({ data }: { data: DashboardData }) {
@@ -74,10 +74,12 @@ export function CounselorDashboardCharts({ data }: { data: DashboardData }) {
     { name: "Missed", value: data.missedAppointments, fill: "#f59e0b" },
   ].filter((d) => d.value > 0);
 
-  // formatted monthly trends
+  // formatted monthly trends - use "name" as the category key for Recharts
   const monthlyData = data.monthlyTrends.map((t) => ({
-    ...t,
-    label: formatMonth(t.month),
+    name: formatMonth(t.month),
+    completed: t.completed,
+    cancelled: t.cancelled,
+    missed: t.missed,
   }));
 
   const hasChartData = monthlyData.length > 0;
@@ -96,10 +98,10 @@ export function CounselorDashboardCharts({ data }: { data: DashboardData }) {
           bgAccent="bg-primary/8"
         />
         <StatCard
-          icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
+          icon={<Wallet className="w-5 h-5 text-emerald-600" />}
           label="Total Earnings"
-          value={`$${data.totalEarnings.toLocaleString()}`}
-          subtitle={`$${data.hourlyRate}/hr rate`}
+          value={`NPR ${data.totalEarnings.toLocaleString()}`}
+          subtitle={`NPR ${data.hourlyRate}/hr rate`}
           bgAccent="bg-emerald-50"
         />
         <StatCard
@@ -132,22 +134,16 @@ export function CounselorDashboardCharts({ data }: { data: DashboardData }) {
           <CardContent>
             {hasChartData ? (
               <ChartContainer config={monthlyTrendConfig} className="h-[280px] w-full">
-                <AreaChart data={monthlyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                  <defs>
-                    <linearGradient id="fillCompleted" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00796B" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#00796B" stopOpacity={0.02} />
-                    </linearGradient>
-                  </defs>
+                <BarChart data={monthlyData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                   <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12 }} allowDecimals={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <ChartLegend content={<ChartLegendContent />} />
-                  <Area type="monotone" dataKey="completed" stroke="#00796B" strokeWidth={2} fill="url(#fillCompleted)" />
-                  <Area type="monotone" dataKey="cancelled" stroke="#ef4444" strokeWidth={2} fill="transparent" />
-                  <Area type="monotone" dataKey="missed" stroke="#f59e0b" strokeWidth={2} fill="transparent" />
-                </AreaChart>
+                  <Bar dataKey="completed" fill="var(--color-completed)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="cancelled" fill="var(--color-cancelled)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="missed" fill="var(--color-missed)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                </BarChart>
               </ChartContainer>
             ) : (
               <EmptyChartState message="No appointment data yet" />
@@ -203,7 +199,7 @@ export function CounselorDashboardCharts({ data }: { data: DashboardData }) {
                   <XAxis dataKey="stars" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                   <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12 }} allowDecimals={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="count" fill="#00796B" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                  <Bar dataKey="count" fill="var(--color-count)" radius={[6, 6, 0, 0]} maxBarSize={40} />
                 </BarChart>
               </ChartContainer>
             ) : (
