@@ -533,10 +533,12 @@ export const getCounselorAvailableSlots = async (
     const endOfDay = new Date(startOfDay);
     endOfDay.setDate(endOfDay.getDate() + 1);
 
+    const now = new Date();
+
     const slots = await prisma.availabilitySlot.findMany({
         where: {
             counselorProfileId: counselorId,
-            startTime: { gte: startOfDay },
+            startTime: { gte: startOfDay > now ? startOfDay : now },
             endTime: { lt: endOfDay },
             isBooked: false,
             isBlocked: false,
@@ -564,10 +566,13 @@ export const getCounselorAvailableDates = async (
     const startOfMonth = new Date(year, month, 1);
     const endOfMonth = new Date(year, month + 1, 1);
 
+    const now = new Date();
+    const rangeStart = startOfMonth > now ? startOfMonth : now;
+
     const slots = await prisma.availabilitySlot.findMany({
         where: {
             counselorProfileId: counselorId,
-            startTime: { gte: startOfMonth },
+            startTime: { gte: rangeStart },
             endTime: { lt: endOfMonth },
             isBooked: false,
             isBlocked: false,
@@ -575,14 +580,17 @@ export const getCounselorAvailableDates = async (
         select: { startTime: true },
     });
 
-    // Return unique date strings
+    // return unique local date strings (must match client calendar format)
     const dates = new Set(
-        slots.map((s) => s.startTime.toISOString().split("T")[0])
+        slots.map((s) => {
+            const d = s.startTime;
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        })
     );
     return Array.from(dates);
 };
 
-// ─── Book an appointment ───
+// Book an appointment
 
 export const bookAppointment = async (slotId: string) => {
     const session = await auth();
@@ -604,7 +612,11 @@ export const bookAppointment = async (slotId: string) => {
             where: { id: slotId },
             include: {
                 counselor: {
-                    select: { fullName: true, professionalTitle: true },
+                    select: {
+                        fullName: true,
+                        professionalTitle: true,
+                        user: { select: { email: true } },
+                    },
                 },
             },
         });
@@ -666,15 +678,18 @@ export const bookAppointment = async (slotId: string) => {
             appointmentId = created.id;
         });
 
-        // Send confirmation email (non-blocking)
+        // send confirmation emails to both parties (non-blocking)
         if (meetingLink && appointmentId) {
             const { format } = await import("date-fns");
-            const { bookingConfirmationEmail } = await import("@/lib/email-templates");
+            const { bookingConfirmationEmail, counselorBookingNotificationEmail } = await import("@/lib/email-templates");
             const { sendEmail } = await import("@/lib/email");
 
-            // Use in-app meeting page URL so the 30-min time gate applies
+            // use in-app meeting page URL so the 30-min time gate applies
             const inAppMeetingUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/meeting/${appointmentId}`;
+            const dateStr = format(slot.startTime, "MMMM d, yyyy");
+            const timeStr = format(slot.startTime, "h:mm a");
 
+            // email to patient
             sendEmail({
                 to: patientProfile.user.email,
                 subject: "Appointment Confirmed - MindLens AI",
@@ -682,8 +697,21 @@ export const bookAppointment = async (slotId: string) => {
                     patientName: patientProfile.fullName,
                     counselorName: slot.counselor.fullName,
                     counselorTitle: slot.counselor.professionalTitle || "Counselor",
-                    date: format(slot.startTime, "MMMM d, yyyy"),
-                    time: format(slot.startTime, "h:mm a"),
+                    date: dateStr,
+                    time: timeStr,
+                    meetingLink: inAppMeetingUrl,
+                }),
+            }).catch(console.error);
+
+            // email to counselor
+            sendEmail({
+                to: slot.counselor.user.email,
+                subject: "New Appointment Booked - MindLens AI",
+                html: counselorBookingNotificationEmail({
+                    counselorName: slot.counselor.fullName,
+                    patientName: patientProfile.fullName,
+                    date: dateStr,
+                    time: timeStr,
                     meetingLink: inAppMeetingUrl,
                 }),
             }).catch(console.error);
@@ -784,7 +812,16 @@ function generateSlotsFromSchedule(
         }
     }
 
-    return slots;
+    // deduplicate overlapping slots across multiple time blocks on the same day
+    slots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    const deduped: { startTime: Date; endTime: Date }[] = [];
+    for (const slot of slots) {
+        const last = deduped[deduped.length - 1];
+        if (!last || slot.startTime >= last.endTime) {
+            deduped.push(slot);
+        }
+    }
+    return deduped;
 }
 
 function hasOverlappingBlocks(blocks: { startTime: string; endTime: string }[]): boolean {
@@ -877,12 +914,14 @@ export const saveRecurringSchedule = async (values: {
                 });
             }
 
-            // 3. Delete future unbooked slots (keep booked ones)
+            // 3. Delete future unbooked slots that have no appointment records
+            // (cancelled appointments still reference the slot via foreign key)
             await tx.availabilitySlot.deleteMany({
                 where: {
                     counselorProfileId: profile.id,
                     startTime: { gt: new Date() },
                     isBooked: false,
+                    appointment: { is: null },
                 },
             });
 
@@ -927,6 +966,51 @@ export const saveRecurringSchedule = async (values: {
         console.error("Save schedule error:", error);
         return { error: "Failed to save schedule. Please try again." };
     }
+};
+
+// ─── Get global slot statistics (all future slots, not just current week) ───
+
+export interface SlotStats {
+    total: number;
+    available: number;
+    booked: number;
+    blocked: number;
+}
+
+export const getSlotStats = async (userId?: string): Promise<SlotStats> => {
+    let uid = userId;
+    if (!uid) {
+        const session = await auth();
+        if (!session || session.user.role !== "COUNSELOR") return { total: 0, available: 0, booked: 0, blocked: 0 };
+        uid = session.user.id;
+    }
+
+    const profile = await prisma.counselorProfile.findUnique({
+        where: { userId: uid },
+        select: { id: true },
+    });
+    if (!profile) return { total: 0, available: 0, booked: 0, blocked: 0 };
+
+    const now = new Date();
+
+    const [total, booked, blocked] = await Promise.all([
+        prisma.availabilitySlot.count({
+            where: { counselorProfileId: profile.id, startTime: { gt: now } },
+        }),
+        prisma.availabilitySlot.count({
+            where: { counselorProfileId: profile.id, startTime: { gt: now }, isBooked: true },
+        }),
+        prisma.availabilitySlot.count({
+            where: { counselorProfileId: profile.id, startTime: { gt: now }, isBlocked: true, isBooked: false },
+        }),
+    ]);
+
+    return {
+        total,
+        available: total - booked - blocked,
+        booked,
+        blocked,
+    };
 };
 
 // ─── Get Availability Slots for Management (Counselor View) ───

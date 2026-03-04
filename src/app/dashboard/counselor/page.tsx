@@ -106,7 +106,7 @@ export default async function CounselorDashboard() {
                     </Link>
                   </div>
                 </div>
-                {/* image placeholder - use an illustration of a counselor managing their schedule */}
+                {/* image placeholder to use an image of a counselor managing their schedule */}
                 <div className="relative hidden lg:flex items-center justify-center p-8">
                   <Image
                     src="/counselor-schedule-illustration.png"

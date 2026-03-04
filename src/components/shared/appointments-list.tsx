@@ -13,6 +13,8 @@ import {
   ChevronRight,
   AlertTriangle,
   CheckCircle2,
+  XCircle,
+  Radio,
   Loader2,
   Mail,
 } from "lucide-react";
@@ -20,7 +22,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAppointments } from "@/lib/actions/appointment";
 
 // --- Types ---
-type AppointmentCategory = "upcoming" | "completed" | "missed";
+type AppointmentCategory = "upcoming" | "ongoing" | "completed" | "missed" | "cancelled";
 
 export interface Appointment {
   id: string;
@@ -146,32 +148,46 @@ export function AppointmentsList({
         onValueChange={handleTabChange}
         className="w-full"
       >
-        <TabsList className="w-full grid grid-cols-3 h-12 bg-white border">
+        <TabsList className="w-full grid grid-cols-5 h-12 bg-white border">
           <TabsTrigger
             value="upcoming"
             className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
           >
-            <Clock className="w-4 h-4 mr-2" />
+            <Clock className="w-4 h-4 mr-2 hidden sm:block" />
             Upcoming
+          </TabsTrigger>
+          <TabsTrigger
+            value="ongoing"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+          >
+            <Radio className="w-4 h-4 mr-2 hidden sm:block" />
+            Ongoing
           </TabsTrigger>
           <TabsTrigger
             value="completed"
             className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
           >
-            <CheckCircle2 className="w-4 h-4 mr-2" />
+            <CheckCircle2 className="w-4 h-4 mr-2 hidden sm:block" />
             Completed
           </TabsTrigger>
           <TabsTrigger
             value="missed"
             className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
           >
-            <AlertTriangle className="w-4 h-4 mr-2" />
+            <AlertTriangle className="w-4 h-4 mr-2 hidden sm:block" />
             Missed
+          </TabsTrigger>
+          <TabsTrigger
+            value="cancelled"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+          >
+            <XCircle className="w-4 h-4 mr-2 hidden sm:block" />
+            Cancelled
           </TabsTrigger>
         </TabsList>
 
         {/* Content for all tabs */}
-        {(["upcoming", "completed", "missed"] as const).map((tab) => (
+        {(["upcoming", "ongoing", "completed", "missed", "cancelled"] as const).map((tab) => (
           <TabsContent key={tab} value={tab} className="mt-6">
             {isPending ? (
               <div className="flex items-center justify-center py-20">
@@ -180,6 +196,9 @@ export function AppointmentsList({
             ) : appointments.length === 0 ? (
               <div className="text-center py-20">
                 <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  {tab === "ongoing" && (
+                    <Radio className="w-7 h-7 text-gray-400" />
+                  )}
                   {tab === "upcoming" && (
                     <Clock className="w-7 h-7 text-gray-400" />
                   )}
@@ -189,16 +208,23 @@ export function AppointmentsList({
                   {tab === "missed" && (
                     <AlertTriangle className="w-7 h-7 text-gray-400" />
                   )}
+                  {tab === "cancelled" && (
+                    <XCircle className="w-7 h-7 text-gray-400" />
+                  )}
                 </div>
                 <h3 className="text-lg font-semibold text-gray-700 mb-1">
                   No {tab} appointments
                 </h3>
                 <p className="text-gray-500 text-sm">
+                  {tab === "ongoing" &&
+                    "No sessions are currently in progress."}
                   {tab === "upcoming" &&
                     "You don't have any upcoming appointments scheduled."}
                   {tab === "completed" && "No completed appointments yet."}
                   {tab === "missed" &&
                     "Great! You haven't missed any appointments."}
+                  {tab === "cancelled" &&
+                    "You don't have any cancelled appointments."}
                 </p>
               </div>
             ) : (
@@ -259,16 +285,17 @@ export function AppointmentsList({
                         </div>
 
                         <div className="flex items-center gap-3 ml-4 shrink-0">
-                          {/* Ongoing pulse */}
-                          {isOngoing && (
+                          {/* show live pulse for ongoing, otherwise status badge */}
+                          {isOngoing ? (
                             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-full">
                               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
                               <span className="text-xs font-medium text-amber-700">
                                 Live
                               </span>
                             </div>
+                          ) : (
+                            getStatusBadge(appt.status)
                           )}
-                          {getStatusBadge(appt.status)}
                           <ChevronRight className="w-5 h-5 text-gray-400 transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </div>

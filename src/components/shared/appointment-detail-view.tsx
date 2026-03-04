@@ -581,10 +581,14 @@ export function AppointmentDetailView({ appointment, role }: AppointmentDetailVi
               <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0" />
               <div className="space-y-1">
                 <p>Cancellation is allowed up to <strong>4 hours</strong> before the scheduled time.</p>
-                {!isPatient && (
-                  <p>Time adjustments are allowed up to <strong>2 hours</strong> before the appointment (same day only).</p>
+                {isPatient ? (
+                  <p>For time adjustments, you can request the counselor using the &apos;Add Note&apos; option.</p>
+                ) : (
+                  <>
+                    <p>Time adjustments are allowed up to <strong>2 hours</strong> before the appointment (same day only).</p>
+                    <p>Appointments not marked as completed within <strong>5 minutes</strong> after the end time will be marked as missed.</p>
+                  </>
                 )}
-                <p>Appointments not marked as completed within <strong>5 minutes</strong> after the end time will be marked as missed.</p>
               </div>
             </div>
           </div>

@@ -180,8 +180,8 @@ export function BookingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl sm:max-w-5xl p-0 gap-0 overflow-hidden max-h-[90vh]">
-        <div className="flex flex-col lg:flex-row min-h-[520px]">
+      <DialogContent className="max-w-5xl sm:max-w-5xl p-0 gap-0 overflow-hidden h-[85vh] flex flex-col">
+        <div className="flex flex-col lg:flex-row min-h-0 flex-1 overflow-hidden">
           {/* Left panel - info */}
           <div className="w-full lg:w-64 bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-200 p-6 flex flex-col shrink-0">
             <DialogHeader className="text-left space-y-1 mb-6">
@@ -216,9 +216,9 @@ export function BookingDialog({
           </div>
 
           {/* Right panel - calendar + slots */}
-          <div className="flex-1 flex flex-col lg:flex-row">
+          <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
             {/* Calendar */}
-            <div className="flex-1 min-w-[320px] p-6 border-b lg:border-b-0 lg:border-r border-gray-200">
+            <div className="flex-1 min-w-[320px] p-6 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto">
               <h3 className="font-semibold text-gray-900 mb-4">Select a Date & Time</h3>
 
               {/* Month navigation */}
@@ -280,7 +280,7 @@ export function BookingDialog({
                     return (
                       <button
                         key={day}
-                        disabled={past || !available}
+                        disabled={past}
                         onClick={() => {
                           setSelectedDate(new Date(currentYear, currentMonth, day));
                           setResult(null);
@@ -293,7 +293,7 @@ export function BookingDialog({
                             ? "text-primary bg-primary/10 hover:bg-primary/20"
                             : past
                             ? "text-gray-300 cursor-not-allowed"
-                            : "text-gray-400 cursor-not-allowed",
+                            : "text-gray-600 hover:bg-gray-100",
                           todayDate && !selected && "ring-1 ring-primary"
                         )}
                       >
@@ -306,7 +306,7 @@ export function BookingDialog({
             </div>
 
             {/* Time Slots */}
-            <div className="w-full lg:w-48 p-6 overflow-y-auto max-h-[350px] lg:max-h-none shrink-0">
+            <div className="w-full lg:w-56 p-6 overflow-y-auto shrink-0">
               {!selectedDate ? (
                 <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
                   <CalendarDays className="w-8 h-8 mb-2" />
@@ -353,7 +353,7 @@ export function BookingDialog({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
+        <div className="border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50 shrink-0">
           <div>
             {result?.success && (
               <p className="flex items-center gap-1.5 text-sm text-emerald-600 font-medium">

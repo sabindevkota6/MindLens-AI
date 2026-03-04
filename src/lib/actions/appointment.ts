@@ -36,7 +36,7 @@ async function resolveMissedAppointments(profileId: string, role: "PATIENT" | "C
 
 // ─── Get appointments (paginated, categorized) ───
 export const getAppointments = async (
-    category: "upcoming" | "completed" | "missed",
+    category: "upcoming" | "ongoing" | "completed" | "missed" | "cancelled",
     page: number = 1
 ) => {
     const session = await auth();
@@ -70,15 +70,27 @@ export const getAppointments = async (
         ? { patientProfileId: profileId }
         : { counselorProfileId: profileId };
 
-    // Build status/time filter based on category
+    // build status/time filter based on category
     let statusFilter: Record<string, unknown>;
-    if (category === "upcoming") {
+    // grace threshold matches the missed detection window
+    const graceEnd = new Date(now.getTime() - MISSED_GRACE_MINUTES * 60 * 1000);
+
+    if (category === "ongoing") {
+        // in session or within the grace period after end time (before marked missed)
         statusFilter = {
             status: "SCHEDULED",
-            slot: { endTime: { gte: now } },
+            slot: { startTime: { lte: now }, endTime: { gt: graceEnd } },
+        };
+    } else if (category === "upcoming") {
+        // scheduled but not yet started
+        statusFilter = {
+            status: "SCHEDULED",
+            slot: { startTime: { gt: now } },
         };
     } else if (category === "completed") {
         statusFilter = { status: "COMPLETED" };
+    } else if (category === "cancelled") {
+        statusFilter = { status: "CANCELLED" };
     } else {
         statusFilter = { status: "MISSED" };
     }
@@ -105,7 +117,7 @@ export const getAppointments = async (
                 },
                 review: { select: { id: true, rating: true } },
             },
-            orderBy: { slot: { startTime: category === "upcoming" ? "asc" : "desc" } },
+            orderBy: { slot: { startTime: category === "upcoming" || category === "ongoing" ? "asc" : "desc" } },
             skip: (page - 1) * PAGE_SIZE,
             take: PAGE_SIZE,
         }),

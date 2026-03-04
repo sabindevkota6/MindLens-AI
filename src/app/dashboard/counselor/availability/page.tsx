@@ -4,6 +4,7 @@ import {
   getCounselorProfile,
   getRecurringSchedule,
   getAvailabilitySlots,
+  getSlotStats,
 } from "@/lib/actions/counselor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SetScheduleForm } from "@/components/counselor/set-schedule-form";
@@ -28,10 +29,11 @@ export default async function AvailabilityPage() {
   const userId = session.user.id;
 
   // Run ALL queries in parallel instead of sequentially
-  const [profile, schedule, initialSlots] = await Promise.all([
+  const [profile, schedule, initialSlots, slotStats] = await Promise.all([
     getCounselorProfile(),
     getRecurringSchedule(userId),
     getAvailabilitySlots(weekStart.toISOString(), userId),
+    getSlotStats(userId),
   ]);
 
   if (!profile?.isOnboarded) redirect("/dashboard/counselor/onboarding");
@@ -74,6 +76,7 @@ export default async function AvailabilityPage() {
             <ManageAvailability
               initialSlots={initialSlots}
               initialWeekStart={weekStart.toISOString()}
+              stats={slotStats}
             />
           </TabsContent>
         </Tabs>

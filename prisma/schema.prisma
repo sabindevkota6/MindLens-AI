@@ -154,6 +154,7 @@ model Appointment {
   meetingLink        String?
   patientNote        String?           @db.Text
   cancelledBy        Role?
+  reminderSent       Boolean           @default(false)
   status             AppointmentStatus @default(SCHEDULED)
   createdAt          DateTime          @default(now())
 

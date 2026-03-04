@@ -26,12 +26,14 @@ import {
   getAvailabilitySlots,
   toggleSlotBlock,
   type ManagedSlot,
+  type SlotStats,
 } from "@/lib/actions/counselor";
 import { cn } from "@/lib/utils";
 
 interface ManageAvailabilityProps {
   initialSlots: ManagedSlot[];
   initialWeekStart: string;
+  stats: SlotStats;
 }
 
 function formatDate(date: Date): string {
@@ -70,6 +72,7 @@ function getWeekStart(date: Date): Date {
 export function ManageAvailability({
   initialSlots,
   initialWeekStart,
+  stats,
 }: ManageAvailabilityProps) {
   const [weekStart, setWeekStart] = useState(() => new Date(initialWeekStart));
   const [slots, setSlots] = useState<ManagedSlot[]>(initialSlots);
@@ -168,13 +171,6 @@ export function ManageAvailability({
 
   const isPast = (dateStr: string) => new Date(dateStr) <= new Date();
 
-  const totalSlots = slots.length;
-  const availableSlots = slots.filter(
-    (s) => !s.isBooked && !s.isBlocked && !isPast(s.startTime)
-  ).length;
-  const bookedSlots = slots.filter((s) => s.isBooked).length;
-  const blockedSlots = slots.filter((s) => s.isBlocked && !isPast(s.startTime)).length;
-
   return (
     <div className="space-y-6">
       {/* Stats Row */}
@@ -182,25 +178,25 @@ export function ManageAvailability({
         {[
           {
             label: "Total Slots",
-            value: totalSlots,
+            value: stats.total,
             color: "text-gray-700",
             bg: "bg-white border border-gray-200",
           },
           {
             label: "Available",
-            value: availableSlots,
+            value: stats.available,
             color: "text-emerald-700",
             bg: "bg-emerald-50 border border-emerald-100",
           },
           {
             label: "Booked",
-            value: bookedSlots,
+            value: stats.booked,
             color: "text-blue-700",
             bg: "bg-blue-50 border border-blue-100",
           },
           {
             label: "Blocked",
-            value: blockedSlots,
+            value: stats.blocked,
             color: "text-amber-700",
             bg: "bg-amber-50 border border-amber-100",
           },
