@@ -647,18 +647,8 @@ export const bookAppointment = async (slotId: string) => {
             return { error: "You already have an appointment with this counselor on this day. Please choose a different date or different counselor." };
         }
 
-        // Create Daily.co room for the meeting
-        let meetingLink: string | null = null;
-        try {
-            const { createDailyRoom } = await import("@/lib/daily");
-            const room = await createDailyRoom(slot.endTime);
-            meetingLink = room.url;
-        } catch (err) {
-            console.error("Failed to create Daily room:", err);
-            // Continue without meeting link — it can be set later
-        }
-
         let appointmentId: string = "";
+        let inAppMeetingUrl: string | null = null;
 
         await prisma.$transaction(async (tx) => {
             await tx.availabilitySlot.update({
@@ -671,21 +661,25 @@ export const bookAppointment = async (slotId: string) => {
                     slotId,
                     patientProfileId: patientProfile.id,
                     counselorProfileId: slot.counselorProfileId,
-                    meetingLink,
                     status: "SCHEDULED",
                 },
             });
             appointmentId = created.id;
+
+            const { createInternalMeetingLink } = await import("@/lib/jitsi");
+            inAppMeetingUrl = createInternalMeetingLink(created.id);
+
+            await tx.appointment.update({
+                where: { id: created.id },
+                data: { meetingLink: inAppMeetingUrl },
+            });
         });
 
         // send confirmation emails to both parties (non-blocking)
-        if (meetingLink && appointmentId) {
+        if (inAppMeetingUrl && appointmentId) {
             const { format } = await import("date-fns");
             const { bookingConfirmationEmail, counselorBookingNotificationEmail } = await import("@/lib/email-templates");
             const { sendEmail } = await import("@/lib/email");
-
-            // use in-app meeting page URL so the 30-min time gate applies
-            const inAppMeetingUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard/meeting/${appointmentId}`;
             const dateStr = format(slot.startTime, "MMMM d, yyyy");
             const timeStr = format(slot.startTime, "h:mm a");
 

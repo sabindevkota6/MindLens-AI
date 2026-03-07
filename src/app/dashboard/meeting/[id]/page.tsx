@@ -2,6 +2,12 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { VideoCall } from "@/components/shared/video-call";
+import {
+  createMeetingJwt,
+  createMeetingRoomName,
+  getJitsiAppId,
+  getJitsiDomain,
+} from "@/lib/jitsi";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -18,8 +24,20 @@ export default async function MeetingPage({ params }: PageProps) {
     where: { id },
     include: {
       slot: true,
-      patient: { select: { userId: true } },
-      counselor: { select: { userId: true } },
+      patient: {
+        select: {
+          userId: true,
+          fullName: true,
+          user: { select: { email: true } },
+        },
+      },
+      counselor: {
+        select: {
+          userId: true,
+          fullName: true,
+          user: { select: { email: true } },
+        },
+      },
     },
   });
 
@@ -77,10 +95,25 @@ export default async function MeetingPage({ params }: PageProps) {
     );
   }
 
+  const participant = role === "PATIENT" ? appointment.patient : appointment.counselor;
+  const roomName = createMeetingRoomName(appointment.id);
+  const jwt = await createMeetingJwt({
+    roomName,
+    moderator: role === "COUNSELOR",
+    user: {
+      id: session.user.id,
+      name: participant.fullName || (role === "PATIENT" ? "Patient" : "Counselor"),
+      email: participant.user.email,
+    },
+    expiresAt: new Date(appointment.slot.endTime.getTime() + 30 * 60 * 1000),
+  });
+
   return (
     <VideoCall
-      meetingUrl={appointment.meetingLink}
-      appointmentId={appointment.id}
+      appId={getJitsiAppId()}
+      domain={getJitsiDomain()}
+      roomName={roomName}
+      jwt={jwt}
       role={role}
     />
   );

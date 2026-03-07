@@ -383,7 +383,7 @@ export function ManageAvailability({
                                   <Lock className="w-3 h-3 mr-1" />
                                   Block
                                 </>
-                              )}
+                              )} 
                             </Button>
                           )}
                         </div>
