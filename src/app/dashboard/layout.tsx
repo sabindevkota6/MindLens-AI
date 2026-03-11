@@ -1,5 +1,6 @@
 import { AppNavbar } from "@/components/shared/navbar";
 import { DashboardFooter } from "@/components/shared/dashboard-footer";
+import { ChatWidget } from "@/components/shared/chat-widget";
 import { auth } from "@/auth";
 
 export default async function DashboardLayout({
@@ -15,6 +16,7 @@ export default async function DashboardLayout({
       <AppNavbar role={role} />
       {children}
       <DashboardFooter role={role} />
+      <ChatWidget />
     </>
   );
 }
