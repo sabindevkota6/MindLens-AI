@@ -1,6 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import { useRef, useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,34 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
+
+function getMessageText(
+  parts: Array<{ type: string; text?: string }>
+): string {
+  return parts
+    .filter((part) => part.type === "text" && typeof part.text === "string")
+    .map((part) => part.text)
+    .join("\n");
+}
+
+function AssistantMessage({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkBreaks]}
+      components={{
+        p: ({ children }) => <p className="mb-2 last:mb-0 break-words">{children}</p>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+        em: ({ children }) => <em className="italic">{children}</em>,
+        ol: ({ children }) => <ol className="mb-2 list-decimal pl-5 space-y-1">{children}</ol>,
+        ul: ({ children }) => <ul className="mb-2 list-disc pl-5 space-y-1">{children}</ul>,
+        li: ({ children }) => <li className="pl-1">{children}</li>,
+        br: () => <br />,
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
 
 // the chat widget is a floating bubble in the bottom-right corner of the dashboard.
 // sendMessage() is the core api for sending user messages now
@@ -127,49 +157,52 @@ export function ChatWidget() {
             )}
 
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex gap-2",
-                  message.role === "user" ? "justify-end" : "justify-start"
-                )}
-              >
-                {/* avatar for assistant messages */}
-                {message.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Bot className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                )}
+              (() => {
+                const messageText = getMessageText(
+                  message.parts as Array<{ type: string; text?: string }>
+                );
 
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
-                    message.role === "user"
-                      ? "bg-primary text-white rounded-br-md"
-                      : "bg-white text-gray-800 border border-gray-100 shadow-sm rounded-bl-md"
-                  )}
-                >
-                  {/* render text parts from the message as v6 uses parts array instead of content string */}
-                  {message.parts.map((part, i) => {
-                    if (part.type === "text") {
-                      return part.text.split("\n").map((line, j) => (
-                        <span key={`${i}-${j}`}>
-                          {line}
-                          {j < part.text.split("\n").length - 1 && <br />}
-                        </span>
-                      ));
-                    }
-                    return null;
-                  })}
-                </div>
+                return (
+                  <div
+                    key={message.id}
+                    className={cn(
+                      "flex gap-2",
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    {/* avatar for assistant messages */}
+                    {message.role === "assistant" && (
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Bot className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    )}
 
-                {/* avatar for user messages */}
-                {message.role === "user" && (
-                  <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <User className="w-3.5 h-3.5 text-gray-600" />
+                    <div
+                      className={cn(
+                        "max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed",
+                        message.role === "user"
+                          ? "bg-primary text-white rounded-br-md whitespace-pre-wrap"
+                          : "bg-white text-gray-800 border border-gray-100 shadow-sm rounded-bl-md [&_ol]:mt-2 [&_ul]:mt-2 [&_li_p]:mb-0"
+                      )}
+                    >
+                      {message.role === "assistant" ? (
+                        <div className="text-sm leading-relaxed break-words [&_a]:text-primary [&_a]:underline [&_ol]:pl-5 [&_ul]:pl-5 [&_ol]:space-y-1 [&_ul]:space-y-1 [&_p]:mb-2 [&_p:last-child]:mb-0">
+                          <AssistantMessage content={messageText} />
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap break-words">{messageText}</p>
+                      )}
+                    </div>
+
+                    {/* avatar for user messages */}
+                    {message.role === "user" && (
+                      <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <User className="w-3.5 h-3.5 text-gray-600" />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                );
+              })()
             ))}
 
             {/* typing indicator while ai is generating a response */}
