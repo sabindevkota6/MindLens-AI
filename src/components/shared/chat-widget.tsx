@@ -4,11 +4,12 @@ import { useChat } from "@ai-sdk/react";
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import { useRef, useEffect, useState, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
-  MessageCircle,
+  MessageSquareMore,
   X,
   Send,
   Bot,
@@ -38,6 +39,15 @@ function AssistantMessage({ content }: { content: string }) {
         ul: ({ children }) => <ul className="mb-2 list-disc pl-5 space-y-1">{children}</ul>,
         li: ({ children }) => <li className="pl-1">{children}</li>,
         br: () => <br />,
+        code: ({ children }) => (
+          <code className="bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-xs">{children}</code>
+        ),
+        h1: ({ children }) => <p className="mb-2 font-semibold">{children}</p>,
+        h2: ({ children }) => <p className="mb-2 font-semibold">{children}</p>,
+        h3: ({ children }) => <p className="mb-2 font-semibold">{children}</p>,
+        h4: ({ children }) => <p className="mb-1 font-semibold">{children}</p>,
+        h5: ({ children }) => <p className="mb-1 font-medium">{children}</p>,
+        h6: ({ children }) => <p className="mb-1 font-medium">{children}</p>,
       }}
     >
       {content}
@@ -45,16 +55,32 @@ function AssistantMessage({ content }: { content: string }) {
   );
 }
 
+const patientSuggestions = [
+  "Who is available today?",
+  "How do I book a session?",
+  "What is the Emotion Test?",
+];
+
+const counselorSuggestions = [
+  "How do I set my availability?",
+  "Where are my appointments?",
+  "How do I edit my profile?",
+];
+
 // the chat widget is a floating bubble in the bottom-right corner of the dashboard.
 // sendMessage() is the core api for sending user messages now
-export function ChatWidget() {
+export function ChatWidget({ role = "PATIENT" }: { role?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pathname = usePathname();
 
-  // useChat v6 uses DefaultChatTransport which hits /api/chat by default
-  const { messages, sendMessage, status, error } = useChat();
+  // useChat v6 uses DefaultChatTransport which hits /api/chat by default.
+  // stable id keeps conversation alive across page navigations
+  const { messages, sendMessage, status, error } = useChat({ id: "mindlens-assistant" });
+
+  const suggestions = role === "COUNSELOR" ? counselorSuggestions : patientSuggestions;
 
   const isLoading = status === "submitted" || status === "streaming";
 
@@ -77,21 +103,35 @@ export function ChatWidget() {
     e?.preventDefault();
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
-    sendMessage({ text: trimmed });
+    sendMessage(
+      { text: trimmed },
+      {
+        body: {
+          currentPathname: pathname,
+        },
+      }
+    );
     setInput("");
   };
 
   // handling clicking a suggestion chip to send immediately without form
   const handleSuggestion = (suggestion: string) => {
     if (isLoading) return;
-    sendMessage({ text: suggestion });
+    sendMessage(
+      { text: suggestion },
+      {
+        body: {
+          currentPathname: pathname,
+        },
+      }
+    );
   };
 
   return (
     <>
       {/* chat window that renders as a fixed panel above the floating button */}
       {isOpen && (
-        <div className="fixed bottom-20 right-5 z-50 w-[380px] max-h-[540px] flex flex-col rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
+        <div className="fixed bottom-20 right-5 z-50 w-[380px] h-[540px] flex flex-col rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
           {/* header */}
           <div className="flex items-center justify-between px-4 py-3 bg-primary text-white">
             <div className="flex items-center gap-2">
@@ -118,7 +158,7 @@ export function ChatWidget() {
           {/* messages area */}
           <div
             ref={scrollRef}
-            className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0 max-h-[380px] bg-gray-50/50"
+            className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0 bg-gray-50/50"
           >
             {/* welcome message shown when there are no messages yet */}
             {messages.length === 0 && (
@@ -138,11 +178,7 @@ export function ChatWidget() {
 
                 {/* quick suggestion ideas to help new users get started */}
                 <div className="flex flex-wrap gap-1.5 justify-center pt-1">
-                  {[
-                    "Who is available today?",
-                    "How do I book a session?",
-                    "What is the Emotion Test?",
-                  ].map((suggestion) => (
+                  {suggestions.map((suggestion) => (
                     <button
                       key={suggestion}
                       type="button"
@@ -156,20 +192,24 @@ export function ChatWidget() {
               </div>
             )}
 
-            {messages.map((message) => (
-              (() => {
-                const messageText = getMessageText(
-                  message.parts as Array<{ type: string; text?: string }>
-                );
+            {messages.map((message) => {
+              const messageText = getMessageText(
+                message.parts as Array<{ type: string; text?: string }>
+              );
 
-                return (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "flex gap-2",
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    )}
-                  >
+              // skip rendering empty messages (e.g. tool-only responses with no text follow-up)
+              if (!messageText.trim() && message.role === "assistant") {
+                return null;
+              }
+
+              return (
+                <div
+                  key={message.id}
+                  className={cn(
+                    "flex gap-2",
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  )}
+                >
                     {/* avatar for assistant messages */}
                     {message.role === "assistant" && (
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -202,8 +242,7 @@ export function ChatWidget() {
                     )}
                   </div>
                 );
-              })()
-            ))}
+            })}
 
             {/* typing indicator while ai is generating a response */}
             {isLoading && (
@@ -254,16 +293,19 @@ export function ChatWidget() {
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          "fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105",
+          "fixed bottom-5 right-5 z-50 rounded-full shadow-lg flex items-center gap-2 transition-all duration-200 hover:scale-105 ring-[3px] ring-white/40",
           isOpen
-            ? "bg-gray-700 hover:bg-gray-800"
-            : "bg-primary hover:bg-primary/90"
+            ? "bg-gray-700 hover:bg-gray-800 h-12 w-12 justify-center"
+            : "bg-primary hover:bg-primary/90 h-12 px-5"
         )}
       >
         {isOpen ? (
-          <X className="w-6 h-6 text-white" />
+          <X className="w-5 h-5 text-white" />
         ) : (
-          <MessageCircle className="w-6 h-6 text-white" />
+          <>
+            <MessageSquareMore className="w-5 h-5 text-white" />
+            <span className="text-white text-sm font-semibold">AI Chat</span>
+          </>
         )}
       </button>
     </>

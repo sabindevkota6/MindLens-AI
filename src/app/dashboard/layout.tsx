@@ -16,7 +16,7 @@ export default async function DashboardLayout({
       <AppNavbar role={role} />
       {children}
       <DashboardFooter role={role} />
-      <ChatWidget />
+      <ChatWidget role={role} />
     </>
   );
 }

@@ -6,20 +6,8 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { getNavLinksForRole } from "@/lib/chat-navigation";
 import { LogOut, UserCircle } from "lucide-react";
-
-const patientNavLinks = [
-  { href: "/dashboard/patient", label: "Home", match: "home" },
-  { href: "/emotion-test", label: "Emotion-Test", match: "emotion" },
-  { href: "/dashboard/patient#find-counselors", label: "Book a Session", match: "book" },
-  { href: "/dashboard/patient/appointments", label: "My Appointments", match: "appointments" },
-];
-
-const counselorNavLinks = [
-  { href: "/dashboard/counselor", label: "Home", match: "home" },
-  { href: "/dashboard/counselor/availability", label: "Availability", match: "availability" },
-  { href: "/dashboard/counselor/appointments", label: "My Appointments", match: "appointments" },
-];
 
 export function AppNavbar({ role }: { role: string }) {
   const pathname = usePathname();
@@ -27,7 +15,7 @@ export function AppNavbar({ role }: { role: string }) {
   const [sectionVisible, setSectionVisible] = useState(false);
 
   const isCounselor = role === "COUNSELOR";
-  const navLinks = isCounselor ? counselorNavLinks : patientNavLinks;
+  const navLinks = getNavLinksForRole(role);
 
   useEffect(() => setMounted(true), []);
 
