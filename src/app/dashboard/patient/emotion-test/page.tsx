@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { VideoRecorderDialog } from "@/components/patient/video-recorder-dialog";
 import {
   ArrowLeft,
   Video,
@@ -207,10 +207,7 @@ export default async function EmotionTestPage() {
 
                 {/* start recording button */}
                 <div className="flex justify-center mt-6">
-                  <Button className="bg-primary hover:bg-[#00695C] text-white rounded-xl px-9 py-5 text-base font-semibold gap-2.5 shadow-[0_12px_24px_rgba(0,121,107,0.19)]">
-                    <div className="w-4 h-4 rounded-full border-2 border-white" />
-                    Start Recording
-                  </Button>
+                  <VideoRecorderDialog />
                 </div>
 
                 {/* suggested prompts */}
