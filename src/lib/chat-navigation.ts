@@ -52,7 +52,7 @@ const sharedFacts = [
 
 export const patientNavLinks: DashboardNavLink[] = [
   { href: "/dashboard/patient", label: "Home", match: "home", description: "patient dashboard home" },
-  { href: "/emotion-test", label: "Emotion-Test", match: "emotion", description: "ai emotion analysis page" },
+  { href: "/dashboard/patient/emotion-test", label: "Emotion-Test", match: "emotion", description: "ai emotion analysis page" },
   {
     href: "/dashboard/patient#find-counselors",
     label: "Book a Session",
@@ -132,7 +132,7 @@ const roleNavigation: Record<DashboardRole, RoleNavigationConfig> = {
         notAvailableHere: ["Book a Session in the page body"],
       },
       {
-        pattern: "/emotion-test",
+        pattern: "/dashboard/patient/emotion-test",
         label: "emotion test page",
         description: 'The patient is on the AI emotion analysis page.',
         navigationHint: 'Start from the emotion test page when explaining next steps and avoid resetting directions back to the dashboard unless needed.',

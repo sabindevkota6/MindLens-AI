@@ -50,7 +50,7 @@ export function AppNavbar({ role }: { role: string }) {
     // Patient logic
     if (match === "book") return isOnDashboard && sectionVisible;
     if (match === "home") return isOnDashboard && !sectionVisible;
-    if (match === "emotion") return pathname.startsWith("/emotion-test");
+    if (match === "emotion") return pathname.startsWith("/dashboard/patient/emotion-test");
     if (match === "appointments") return pathname.startsWith("/dashboard/patient/appointments");
     return false;
   };

@@ -31,7 +31,7 @@ export default async function PatientDashboardPage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/emotion-test">
+              <Link href="/dashboard/patient/emotion-test">
                 <Button
                   variant="outline"
                   className="bg-white hover:bg-gray-50 text-primary border-0 rounded-xl px-8 py-6 text-base font-semibold flex items-center gap-2.5 shadow-lg shadow-black/10 min-w-[240px]"
@@ -162,7 +162,7 @@ export default async function PatientDashboardPage() {
                   </p>
 
                   <div className="pt-2 space-y-4">
-                    <Link href="/emotion-test">
+                    <Link href="/dashboard/patient/emotion-test">
                       <Button className="bg-white hover:bg-gray-50 text-primary border-0 rounded-xl px-8 py-6 text-base font-semibold gap-2.5 shadow-lg shadow-black/10">
                         <CircleCheckBig className="w-5 h-5" />
                         Take an Emotion Test

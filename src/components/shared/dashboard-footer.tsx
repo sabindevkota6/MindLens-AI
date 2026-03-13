@@ -10,15 +10,15 @@ const patientLinks = {
   col3: {
     title: "Take a Test",
     links: [
-      { href: "/emotion-test", label: "AI Emotion Analysis" },
-      { href: "/emotion-test", label: "Get Recommendations" },
+      { href: "/dashboard/patient/emotion-test", label: "AI Emotion Analysis" },
+      { href: "/dashboard/patient/emotion-test", label: "Get Recommendations" },
     ],
   },
   col4: {
     title: "Book a Session",
     links: [
       { href: "/dashboard/patient#find-counselors", label: "Browse Counselors" },
-      { href: "/emotion-test", label: "Get AI-Chatbot Guidance" },
+      { href: "/dashboard/patient/emotion-test", label: "Get AI-Chatbot Guidance" },
     ],
   },
 };
