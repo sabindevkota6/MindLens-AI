@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { getMerUploadUrl } from "@/lib/actions/mer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -215,27 +216,49 @@ export function VideoRecorderDialog() {
     setError(null);
   };
 
-  // todo: implement actual upload to S3 and hume ai analysis
+  // uploads the video to s3 via presigned url, then triggers analysis
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setError(null);
 
     try {
+      let videoFile: File;
+
       if (mode === "record" && recordedBlobUrl) {
+        // convert the in-memory blob url to an actual file object
         const blob = await fetch(recordedBlobUrl).then((r) => r.blob());
-        const _videoFile = new File([blob], "emotion_recording.webm", {
+        videoFile = new File([blob], "emotion_recording.webm", {
           type: "video/webm",
         });
-        // todo: upload _videoFile to S3 via presigned url
-        // todo: trigger hume ai analysis via server action
-        console.log("recorded video ready for upload:", _videoFile.name);
       } else if (mode === "upload" && uploadedFile) {
-        // todo: upload uploadedFile to S3 via presigned url
-        // todo: trigger hume ai analysis via server action
-        console.log("uploaded video ready for processing:", uploadedFile.name);
+        videoFile = uploadedFile;
+      } else {
+        return;
       }
+
+      // request a presigned url from the server action
+      const urlResponse = await getMerUploadUrl(videoFile.type);
+
+      if ("error" in urlResponse) {
+        setError(urlResponse.error);
+        return;
+      }
+
+      // upload directly to s3 — bypasses next.js server completely
+      const uploadRes = await fetch(urlResponse.signedUrl, {
+        method: "PUT",
+        body: videoFile,
+        headers: { "Content-Type": videoFile.type },
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("S3 upload failed");
+      }
+
+      // todo: trigger hume ai analysis with urlResponse.fileKey
+      console.log("upload complete, file key:", urlResponse.fileKey);
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Failed to upload video. Please check your connection and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -254,7 +277,7 @@ export function VideoRecorderDialog() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-primary text-lg">
             AI Emotion Analysis
@@ -520,7 +543,7 @@ export function VideoRecorderDialog() {
                   {isSubmitting && (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   )}
-                  Analyze Emotions
+                  {isSubmitting ? "Uploading & Analyzing..." : "Analyze Emotions"}
                 </Button>
               </div>
             </>

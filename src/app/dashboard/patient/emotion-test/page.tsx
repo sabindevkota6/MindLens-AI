@@ -69,7 +69,7 @@ export default async function EmotionTestPage() {
               Back to Dashboard
             </Link>
 
-            <div className="max-w-4xl mx-auto text-center space-y-4">
+            <div className="max-w-5xl mx-auto text-center space-y-5">
               {/* badge */}
               <div>
                 <span className="inline-block bg-white/15 text-white text-sm font-medium px-5 py-1.5 rounded-full backdrop-blur-sm">
@@ -90,7 +90,7 @@ export default async function EmotionTestPage() {
               </p>
 
               {/* feature pills */}
-              <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
+              <div className="flex flex-wrap items-center justify-center gap-8 pt-5">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">
                     <Cpu className="w-4 h-4 text-white" />
