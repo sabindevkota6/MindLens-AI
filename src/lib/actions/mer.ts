@@ -1,7 +1,13 @@
 "use server";
 
 import { auth } from "@/auth";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { prisma } from "@/lib/prisma";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // using presigned urls let the browser upload directly to s3 for bypassing next.js server payload limits entirely
@@ -59,5 +65,240 @@ export async function getMerUploadUrl(contentType: string): Promise<
     return { success: true, signedUrl, fileKey };
   } catch {
     return { error: "Failed to generate upload URL. Please try again." };
+  }
+}
+
+// hume ai batch analysis pipeline
+
+const HUME_API_KEY = process.env.HUME_API_KEY!;
+const HUME_BASE = "https://api.hume.ai/v0/batch";
+const POLL_INTERVAL_MS = 3000;
+const POLL_TIMEOUT_MS = 60000;
+
+// maps hume's 53 micro-emotions into 8 basic emotion buckets
+// avoids diagnostic terms and uses only universally recognized emotion labels
+const EMOTION_BUCKETS: Record<string, string[]> = {
+  Fear: [
+    "Anxiety", "Fear", "Horror", "Nervousness", "Vulnerability"
+  ],
+  Sadness: [
+    "Sadness", "Disappointment", "Grief", "Nostalgia", "Pain", "Empathic Pain", "Envy"
+  ],
+  Anger: [
+    "Anger", "Annoyance", "Contempt"
+  ],
+  Disgust: [
+    "Disgust", "Awkwardness", "Embarrassment", "Guilt", "Shame"
+  ],
+  Happiness: [
+    "Joy", "Amusement", "Contentment", "Elation", "Relief", "Triumph", 
+    "Ecstasy", "Pride", "Satisfaction", "Love", "Admiration", "Adoration", 
+    "Sympathy", "Craving", "Desire", "Romance", "Aesthetic Appreciation", "Entrancement"
+  ],
+  Surprise: [
+    "Surprise (positive)", "Surprise (negative)", "Awe", "Realization", "Excitement"
+  ],
+  Neutral: [
+    "Neutral", "Calmness", "Concentration", "Contemplation", "Boredom", "Tiredness", "Sleepiness"
+  ],
+  "Confusion & Overwhelm": [
+    "Confusion", "Doubt", "Hesitation", "Distress", "Interest", "Curiosity"
+  ],
+};
+
+// reverse lookup: micro-emotion name → bucket name
+const microToBucket = new Map<string, string>();
+for (const [bucket, labels] of Object.entries(EMOTION_BUCKETS)) {
+  for (const label of labels) {
+    microToBucket.set(label, bucket);
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function aggregateEmotions(predictionsJson: any) {
+  const totals: Record<string, number> = {};
+  const counts: Record<string, number> = {};
+  const unmapped = new Set<string>();
+
+  for (const bucket of Object.keys(EMOTION_BUCKETS)) {
+    totals[bucket] = 0;
+    counts[bucket] = 0;
+  }
+
+  // flatten all emotion scores across every model and prediction frame
+  // hume nests predictions inside source → results → predictions → models → grouped_predictions → predictions → emotions
+  const sources = Array.isArray(predictionsJson) ? predictionsJson : [predictionsJson];
+
+  for (const source of sources) {
+    const results = source?.results?.predictions ?? [];
+    for (const prediction of results) {
+      const models = prediction?.models ?? {};
+
+      // iterate over each model (face, prosody, language)
+      for (const modelData of Object.values(models) as any[]) {
+        const groups = modelData?.grouped_predictions ?? [];
+        for (const group of groups) {
+          for (const pred of group?.predictions ?? []) {
+            for (const emo of pred?.emotions ?? []) {
+              const bucket = microToBucket.get(emo.name);
+              if (bucket) {
+                totals[bucket] += emo.score;
+                counts[bucket]++;
+              } else {
+                unmapped.add(emo.name);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // catch any new emotions hume adds so we know to update the bucket map
+  if (unmapped.size > 0) {
+    console.warn("[mer] unmapped hume emotions:", [...unmapped]);
+  }
+
+  // average scores per bucket to normalize across models
+  const averaged: Record<string, number> = {};
+  for (const bucket of Object.keys(EMOTION_BUCKETS)) {
+    averaged[bucket] = counts[bucket] > 0
+      ? Math.round((totals[bucket] / counts[bucket]) * 10000) / 10000
+      : 0;
+  }
+
+  // dominant emotion is the bucket with the highest average
+  const dominantEmotion = Object.entries(averaged)
+    .sort(([, a], [, b]) => b - a)[0][0];
+
+  return { averaged, dominantEmotion };
+}
+
+// helper to pause execution during polling
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function processEmotionAnalysis(fileKey: string): Promise<
+  { success: true; dominantEmotion: string } | { error: string }
+> {
+  const session = await auth();
+  if (!session?.user) return { error: "Unauthorized" };
+  if (session.user.role !== "PATIENT") return { error: "Unauthorized" };
+
+  // need patientProfileId for the emotion log record
+  const profile = await prisma.patientProfile.findUnique({
+    where: { userId: session.user.id },
+    select: { id: true },
+  });
+
+  if (!profile) return { error: "Patient profile not found" };
+
+  try {
+    // generate a temporary read url so hume can fetch the video from s3
+    const getCommand = new GetObjectCommand({
+      Bucket: process.env.AWS_BUCKET_NAME!,
+      Key: fileKey,
+    });
+    const videoUrl = await getSignedUrl(s3Client, getCommand, {
+      expiresIn: 600,
+    });
+
+    // start the hume batch inference job with all three modalities
+    const jobRes = await fetch(`${HUME_BASE}/jobs`, {
+      method: "POST",
+      headers: {
+        "X-Hume-Api-Key": HUME_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        urls: [videoUrl],
+        models: {
+          face: {},
+          prosody: {},
+          language: { granularity: "utterance" },
+        },
+        transcription: { language: "en" },
+      }),
+    });
+
+    if (!jobRes.ok) {
+      const body = await jobRes.text();
+      console.error("[mer] hume job creation failed:", jobRes.status, body);
+      return { error: "Failed to start emotion analysis" };
+    }
+
+    const { job_id } = await jobRes.json();
+
+    // poll until the async deep learning pipeline completes
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
+    let status = "";
+
+    while (Date.now() < deadline) {
+      await sleep(POLL_INTERVAL_MS);
+
+      const statusRes = await fetch(`${HUME_BASE}/jobs/${job_id}`, {
+        headers: { "X-Hume-Api-Key": HUME_API_KEY },
+      });
+
+      if (!statusRes.ok) {
+        return { error: "Failed to check analysis status" };
+      }
+
+      const statusData = await statusRes.json();
+      status = statusData.state?.status ?? "";
+
+      if (status === "COMPLETED") break;
+      if (status === "FAILED") return { error: "Emotion analysis failed" };
+    }
+
+    if (status !== "COMPLETED") {
+      return { error: "Analysis timed out. Please try again with a shorter video." };
+    }
+
+    // fetch the full predictions payload
+    const predictionsRes = await fetch(`${HUME_BASE}/jobs/${job_id}/predictions`, {
+      headers: { "X-Hume-Api-Key": HUME_API_KEY },
+    });
+
+    if (!predictionsRes.ok) {
+      return { error: "Failed to retrieve analysis results" };
+    }
+
+    const predictionsJson = await predictionsRes.json();
+    const { averaged, dominantEmotion } = aggregateEmotions(predictionsJson);
+
+    // execute s3 cleanup and database persistence concurrently
+    // fork/join pattern — privacy deletion and data save run in parallel
+    const [deleteResult, saveResult] = await Promise.allSettled([
+      // task a: permanently delete the video from s3
+      s3Client.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME!,
+          Key: fileKey,
+        }),
+      ),
+      // task b: persist the analysis to the database
+      prisma.emotionLog.create({
+        data: {
+          patientProfileId: profile.id,
+          humeAnalysisJson: { raw: predictionsJson, aggregated: averaged },
+          dominantEmotion,
+        },
+      }),
+    ]);
+
+    // log if s3 deletion failed but don't block the user — can be retried
+    if (deleteResult.status === "rejected") {
+      console.error("s3 video deletion failed:", deleteResult.reason);
+    }
+
+    if (saveResult.status === "rejected") {
+      return { error: "Failed to save analysis results" };
+    }
+
+    return { success: true, dominantEmotion };
+  } catch {
+    return { error: "Something went wrong during analysis. Please try again." };
   }
 }

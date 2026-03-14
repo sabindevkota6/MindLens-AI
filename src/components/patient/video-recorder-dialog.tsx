@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getMerUploadUrl } from "@/lib/actions/mer";
+import { getMerUploadUrl, processEmotionAnalysis } from "@/lib/actions/mer";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -255,8 +255,15 @@ export function VideoRecorderDialog() {
         throw new Error("S3 upload failed");
       }
 
-      // todo: trigger hume ai analysis with urlResponse.fileKey
-      console.log("upload complete, file key:", urlResponse.fileKey);
+      // trigger hume ai emotion analysis pipeline
+      const analysisResult = await processEmotionAnalysis(urlResponse.fileKey);
+
+      if ("error" in analysisResult) {
+        setError(analysisResult.error);
+        return;
+      }
+
+      console.log("dominant emotion:", analysisResult.dominantEmotion);
     } catch {
       setError("Failed to upload video. Please check your connection and try again.");
     } finally {
