@@ -116,17 +116,14 @@ for (const [bucket, labels] of Object.entries(EMOTION_BUCKETS)) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function aggregateEmotions(predictionsJson: any) {
-  const totals: Record<string, number> = {};
-  const counts: Record<string, number> = {};
+  const bucketNames = Object.keys(EMOTION_BUCKETS);
   const unmapped = new Set<string>();
 
-  for (const bucket of Object.keys(EMOTION_BUCKETS)) {
-    totals[bucket] = 0;
-    counts[bucket] = 0;
-  }
+  // per-model accumulators: keyed by "modelName:bucket" for independent averaging
+  // this prevents the face model (200+ frames) from drowning out prosody/language (2-5 frames)
+  const modelTotals = new Map<string, number>();
+  const modelCounts = new Map<string, number>();
 
-  // flatten all emotion scores across every model and prediction frame
-  // hume nests predictions inside source → results → predictions → models → grouped_predictions → predictions → emotions
   const sources = Array.isArray(predictionsJson) ? predictionsJson : [predictionsJson];
 
   for (const source of sources) {
@@ -134,16 +131,17 @@ function aggregateEmotions(predictionsJson: any) {
     for (const prediction of results) {
       const models = prediction?.models ?? {};
 
-      // iterate over each model (face, prosody, language)
-      for (const modelData of Object.values(models) as any[]) {
+      // iterate over each model (face, prosody, language) separately
+      for (const [modelName, modelData] of Object.entries(models) as [string, any][]) {
         const groups = modelData?.grouped_predictions ?? [];
         for (const group of groups) {
           for (const pred of group?.predictions ?? []) {
             for (const emo of pred?.emotions ?? []) {
               const bucket = microToBucket.get(emo.name);
               if (bucket) {
-                totals[bucket] += emo.score;
-                counts[bucket]++;
+                const key = `${modelName}:${bucket}`;
+                modelTotals.set(key, (modelTotals.get(key) ?? 0) + emo.score);
+                modelCounts.set(key, (modelCounts.get(key) ?? 0) + 1);
               } else {
                 unmapped.add(emo.name);
               }
@@ -154,20 +152,38 @@ function aggregateEmotions(predictionsJson: any) {
     }
   }
 
-  // catch any new emotions hume adds so we know to update the bucket map
   if (unmapped.size > 0) {
     console.warn("[mer] unmapped hume emotions:", [...unmapped]);
   }
 
-  // average scores per bucket to normalize across models
-  const averaged: Record<string, number> = {};
-  for (const bucket of Object.keys(EMOTION_BUCKETS)) {
-    averaged[bucket] = counts[bucket] > 0
-      ? Math.round((totals[bucket] / counts[bucket]) * 10000) / 10000
-      : 0;
+  // collect which models actually produced data
+  const modelNames = new Set<string>();
+  for (const key of modelTotals.keys()) {
+    modelNames.add(key.split(":")[0]);
   }
 
-  // dominant emotion is the bucket with the highest average
+  // step 1: average within each model per bucket (normalizes frame count differences)
+  // step 2: take the max across models per bucket (strongest modality signal wins)
+  const averaged: Record<string, number> = {};
+
+  for (const bucket of bucketNames) {
+    let maxAcrossModels = 0;
+
+    for (const model of modelNames) {
+      const key = `${model}:${bucket}`;
+      const total = modelTotals.get(key) ?? 0;
+      const count = modelCounts.get(key) ?? 0;
+
+      if (count > 0) {
+        const modelAvg = total / count;
+        if (modelAvg > maxAcrossModels) maxAcrossModels = modelAvg;
+      }
+    }
+
+    averaged[bucket] = Math.round(maxAcrossModels * 10000) / 10000;
+  }
+
+  // dominant emotion is the bucket where the strongest modality scored highest
   const dominantEmotion = Object.entries(averaged)
     .sort(([, a], [, b]) => b - a)[0][0];
 
