@@ -219,7 +219,7 @@ function sleep(ms: number) {
 }
 
 export async function processEmotionAnalysis(fileKey: string): Promise<
-  { success: true; dominantEmotion: string } | { error: string }
+  { success: true; dominantEmotion: string; emotions: Record<string, number> } | { error: string }
 > {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
@@ -336,7 +336,7 @@ export async function processEmotionAnalysis(fileKey: string): Promise<
       return { error: "Failed to save analysis results" };
     }
 
-    return { success: true, dominantEmotion };
+    return { success: true, dominantEmotion, emotions: averaged };
   } catch {
     return { error: "Something went wrong during analysis. Please try again." };
   }

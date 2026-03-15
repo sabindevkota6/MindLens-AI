@@ -24,14 +24,23 @@ import {
   User,
   AlertCircle,
   FileText,
-  Loader2,
+  Sparkles,
 } from "lucide-react";
+import type { EmotionAnalysisResult } from "@/components/mer/emotion-results";
 
 const MAX_DURATION = 120; // 2 minutes in seconds
 const MAX_FILE_SIZE_MB = 50;
 const ACCEPTED_VIDEO_TYPES = ".mp4,.webm,.mov,.avi";
 
-export function VideoRecorderDialog() {
+interface VideoRecorderDialogProps {
+  onAnalysisComplete?: (data: EmotionAnalysisResult) => void;
+  triggerLabel?: string;
+}
+
+export function VideoRecorderDialog({
+  onAnalysisComplete,
+  triggerLabel = "Start Recording",
+}: VideoRecorderDialogProps) {
   const [open, setOpen] = useState(false);
   const [hasAgreed, setHasAgreed] = useState(false);
   const [mode, setMode] = useState<"choose" | "record" | "upload">("choose");
@@ -263,6 +272,12 @@ export function VideoRecorderDialog() {
         return;
       }
 
+      // pass results to parent and auto-close the dialog
+      onAnalysisComplete?.({
+        dominantEmotion: analysisResult.dominantEmotion,
+        emotions: analysisResult.emotions,
+      });
+      handleOpenChange(false);
     } catch {
       setError("Failed to upload video. Please check your connection and try again.");
     } finally {
@@ -279,11 +294,35 @@ export function VideoRecorderDialog() {
       <DialogTrigger asChild>
         <Button className="bg-primary hover:bg-[#00695C] text-white rounded-xl px-9 py-5 text-base font-semibold gap-2.5 shadow-[0_12px_24px_rgba(0,121,107,0.19)]">
           <div className="w-4 h-4 rounded-full border-2 border-white" />
-          Start Recording
+          {triggerLabel}
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        {/* analyzing screen replaces the form content while the pipeline runs */}
+        {isSubmitting ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="relative w-20 h-20 mb-6">
+              <div className="absolute inset-0 rounded-full border-[3px] border-primary/10" />
+              <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-primary animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="w-7 h-7 text-primary animate-pulse" />
+              </div>
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900">
+              Analyzing Emotions...
+            </h3>
+            <p className="text-sm text-slate-500 mt-2 max-w-xs text-center">
+              Our AI is processing your facial expressions and vocal patterns
+            </p>
+            <div className="flex gap-1.5 mt-5">
+              <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+              <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+              <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          </div>
+        ) : (
+        <>
         <DialogHeader>
           <DialogTitle className="text-primary text-lg">
             AI Emotion Analysis
@@ -546,15 +585,14 @@ export function VideoRecorderDialog() {
                   disabled={!canSubmit || isSubmitting}
                   className="bg-primary hover:bg-[#00695C] text-white rounded-xl px-6 py-5 text-sm font-semibold gap-2"
                 >
-                  {isSubmitting && (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  )}
-                  {isSubmitting ? "Uploading & Analyzing..." : "Analyze Emotions"}
+                  Analyze Emotions
                 </Button>
               </div>
             </>
           )}
         </div>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
