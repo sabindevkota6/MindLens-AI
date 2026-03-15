@@ -263,7 +263,6 @@ export function VideoRecorderDialog() {
         return;
       }
 
-      console.log("dominant emotion:", analysisResult.dominantEmotion);
     } catch {
       setError("Failed to upload video. Please check your connection and try again.");
     } finally {
