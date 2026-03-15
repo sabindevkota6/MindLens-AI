@@ -535,6 +535,12 @@ export const getCounselorAvailableSlots = async (
 
     const now = new Date();
 
+    const activeSchedule = await prisma.recurringSchedule.findMany({
+        where: { counselorProfileId: counselorId },
+        select: { dayOfWeek: true },
+    });
+    const activeDays = [...new Set(activeSchedule.map((s) => s.dayOfWeek))];
+
     const slots = await prisma.availabilitySlot.findMany({
         where: {
             counselorProfileId: counselorId,
@@ -546,11 +552,13 @@ export const getCounselorAvailableSlots = async (
         orderBy: { startTime: "asc" },
     });
 
-    return slots.map((s) => ({
-        id: s.id,
-        startTime: s.startTime.toISOString(),
-        endTime: s.endTime.toISOString(),
-    }));
+    return slots
+        .filter((s) => activeDays.includes(s.startTime.getDay()))
+        .map((s) => ({
+            id: s.id,
+            startTime: s.startTime.toISOString(),
+            endTime: s.endTime.toISOString(),
+        }));
 };
 
 // ─── Get dates that have available slots (for calendar highlighting) ───
@@ -569,6 +577,13 @@ export const getCounselorAvailableDates = async (
     const now = new Date();
     const rangeStart = startOfMonth > now ? startOfMonth : now;
 
+    // Fetch active schedule days — same zombie-slot guard as getCounselorAvailableSlots.
+    const activeSchedule = await prisma.recurringSchedule.findMany({
+        where: { counselorProfileId: counselorId },
+        select: { dayOfWeek: true },
+    });
+    const activeDays = [...new Set(activeSchedule.map((s) => s.dayOfWeek))];
+
     const slots = await prisma.availabilitySlot.findMany({
         where: {
             counselorProfileId: counselorId,
@@ -582,10 +597,12 @@ export const getCounselorAvailableDates = async (
 
     // return unique local date strings (must match client calendar format)
     const dates = new Set(
-        slots.map((s) => {
-            const d = s.startTime;
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        })
+        slots
+            .filter((s) => activeDays.includes(s.startTime.getDay()))
+            .map((s) => {
+                const d = s.startTime;
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            })
     );
     return Array.from(dates);
 };
@@ -647,6 +664,8 @@ export const bookAppointment = async (slotId: string) => {
             return { error: "You already have an appointment with this counselor on this day. Please choose a different date or different counselor." };
         }
 
+        const existingSlotAppt = await prisma.appointment.findUnique({ where: { slotId } });
+
         let appointmentId: string = "";
         let inAppMeetingUrl: string | null = null;
 
@@ -656,14 +675,34 @@ export const bookAppointment = async (slotId: string) => {
                 data: { isBooked: true },
             });
 
-            const created = await tx.appointment.create({
-                data: {
-                    slotId,
-                    patientProfileId: patientProfile.id,
-                    counselorProfileId: slot.counselorProfileId,
-                    status: "SCHEDULED",
-                },
-            });
+            // slotId is @unique on Appointment — if a cancelled appointment already holds
+            // this slotId (slot was previously booked then cancelled), we must update it
+            // rather than insert a new record to avoid a unique constraint violation.
+            let created: { id: string };
+            if (existingSlotAppt?.status === "CANCELLED") {
+                created = await tx.appointment.update({
+                    where: { id: existingSlotAppt.id },
+                    data: {
+                        patientProfileId: patientProfile.id,
+                        counselorProfileId: slot.counselorProfileId,
+                        status: "SCHEDULED",
+                        cancelledBy: null,
+                        meetingLink: null,
+                        patientNote: null,
+                        reminderSent: false,
+                        createdAt: new Date(),
+                    },
+                });
+            } else {
+                created = await tx.appointment.create({
+                    data: {
+                        slotId,
+                        patientProfileId: patientProfile.id,
+                        counselorProfileId: slot.counselorProfileId,
+                        status: "SCHEDULED",
+                    },
+                });
+            }
             appointmentId = created.id;
 
             const { createInternalMeetingLink } = await import("@/lib/jitsi");
@@ -908,8 +947,7 @@ export const saveRecurringSchedule = async (values: {
                 });
             }
 
-            // 3. Delete future unbooked slots that have no appointment records
-            // (cancelled appointments still reference the slot via foreign key)
+
             await tx.availabilitySlot.deleteMany({
                 where: {
                     counselorProfileId: profile.id,
@@ -918,6 +956,29 @@ export const saveRecurringSchedule = async (values: {
                     appointment: { is: null },
                 },
             });
+
+            const disabledDays = values.schedule.filter((d) => !d.enabled).map((d) => d.dayOfWeek);
+            if (disabledDays.length > 0) {
+                const zombieSlots = await tx.availabilitySlot.findMany({
+                    where: {
+                        counselorProfileId: profile.id,
+                        startTime: { gt: new Date() },
+                        isBooked: false,
+                        isBlocked: false,
+                        appointment: { isNot: null },
+                    },
+                    select: { id: true, startTime: true },
+                });
+                const idsToBlock = zombieSlots
+                    .filter((s) => disabledDays.includes(s.startTime.getDay()))
+                    .map((s) => s.id);
+                if (idsToBlock.length > 0) {
+                    await tx.availabilitySlot.updateMany({
+                        where: { id: { in: idsToBlock } },
+                        data: { isBlocked: true },
+                    });
+                }
+            }
 
             // 4. Generate new slots from schedule
             const newSlots = generateSlotsFromSchedule(entries, GENERATION_WEEKS);
@@ -1039,6 +1100,12 @@ export const getAvailabilitySlots = async (
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 7);
 
+    const activeSchedule = await prisma.recurringSchedule.findMany({
+        where: { counselorProfileId: profile.id },
+        select: { dayOfWeek: true },
+    });
+    const activeDays = [...new Set(activeSchedule.map((s) => s.dayOfWeek))];
+
     const slots = await prisma.availabilitySlot.findMany({
         where: {
             counselorProfileId: profile.id,
@@ -1055,14 +1122,16 @@ export const getAvailabilitySlots = async (
         orderBy: { startTime: "asc" },
     });
 
-    return slots.map((s) => ({
-        id: s.id,
-        startTime: s.startTime.toISOString(),
-        endTime: s.endTime.toISOString(),
-        isBooked: s.isBooked,
-        isBlocked: s.isBlocked,
-        patientName: s.appointment?.patient?.fullName,
-    }));
+    return slots
+        .filter((s) => activeDays.includes(s.startTime.getDay()))
+        .map((s) => ({
+            id: s.id,
+            startTime: s.startTime.toISOString(),
+            endTime: s.endTime.toISOString(),
+            isBooked: s.isBooked,
+            isBlocked: s.isBlocked,
+            patientName: s.appointment?.patient?.fullName,
+        }));
 };
 
 // ─── Toggle Slot Block/Unblock ───
