@@ -82,7 +82,9 @@ const EMOTION_BUCKETS: Record<string, string[]> = {
     "Anxiety", "Fear", "Horror", "Nervousness", "Vulnerability"
   ],
   Sadness: [
-    "Sadness", "Disappointment", "Grief", "Nostalgia", "Pain", "Empathic Pain", "Envy"
+    // Tiredness is included here because emotional exhaustion/fatigue is a core sadness marker —
+    // sad people frequently appear tired on face analysis, so it belongs with sadness not neutral
+    "Sadness", "Disappointment", "Grief", "Nostalgia", "Pain", "Empathic Pain", "Envy", "Tiredness"
   ],
   Anger: [
     "Anger", "Annoyance", "Contempt"
@@ -98,11 +100,16 @@ const EMOTION_BUCKETS: Record<string, string[]> = {
   Surprise: [
     "Surprise (positive)", "Surprise (negative)", "Awe", "Realization", "Excitement"
   ],
+  // Neutral is intentionally lean — only genuinely neutral/resting states belong here.
+  // Boredom (flat disengaged affect) and Contemplation (deep rumination) are moved to
+  // Confusion & Overwhelm because they commonly appear in sad/distressed people and
+  // would otherwise inflate the Neutral bucket in face analysis, masking real emotional signals.
   Neutral: [
-    "Neutral", "Calmness", "Concentration", "Contemplation", "Boredom", "Tiredness", "Sleepiness"
+    "Neutral", "Calmness", "Concentration", "Sleepiness"
   ],
   "Confusion & Overwhelm": [
-    "Confusion", "Doubt", "Hesitation", "Distress", "Interest", "Curiosity"
+    "Confusion", "Doubt", "Hesitation", "Distress", "Interest", "Curiosity",
+    "Boredom", "Contemplation"
   ],
 };
 
@@ -162,12 +169,24 @@ function aggregateEmotions(predictionsJson: any) {
     modelNames.add(key.split(":")[0]);
   }
 
-  // step 1: average within each model per bucket (normalizes frame count differences)
-  // step 2: take the max across models per bucket (strongest modality signal wins)
+  // prosody (voice tone) and language (spoken words) are direct, intentional expressions of
+  // what a person is feeling — they should carry more weight than passive face microexpressions,
+  // which can be misleading (e.g. a sad person sitting still looks "calm" and "concentrated")
+  const MODEL_WEIGHTS: Record<string, number> = {
+    face: 0.25,
+    prosody: 0.40,
+    language: 0.35,
+  };
+
+  // step 1: average within each model per bucket (normalizes for differing frame counts)
+  // step 2: compute a weighted average across models per bucket
+  //         — using weighted avg instead of max prevents the face model's passive
+  //           neutral-state scores from overriding clear verbal/vocal sadness signals
   const averaged: Record<string, number> = {};
 
   for (const bucket of bucketNames) {
-    let maxAcrossModels = 0;
+    let weightedSum = 0;
+    let totalWeight = 0;
 
     for (const model of modelNames) {
       const key = `${model}:${bucket}`;
@@ -176,14 +195,18 @@ function aggregateEmotions(predictionsJson: any) {
 
       if (count > 0) {
         const modelAvg = total / count;
-        if (modelAvg > maxAcrossModels) maxAcrossModels = modelAvg;
+        const weight = MODEL_WEIGHTS[model] ?? 0.33;
+        weightedSum += modelAvg * weight;
+        totalWeight += weight;
       }
     }
 
-    averaged[bucket] = Math.round(maxAcrossModels * 10000) / 10000;
+    averaged[bucket] = totalWeight > 0
+      ? Math.round((weightedSum / totalWeight) * 10000) / 10000
+      : 0;
   }
 
-  // dominant emotion is the bucket where the strongest modality scored highest
+  // dominant emotion is the bucket with the highest weighted-average score
   const dominantEmotion = Object.entries(averaged)
     .sort(([, a], [, b]) => b - a)[0][0];
 
