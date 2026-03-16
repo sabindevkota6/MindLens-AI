@@ -3,6 +3,10 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
+  getRecommendedCounselors,
+  type RecommendedCounselor,
+} from "@/lib/actions/recommendation";
+import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
@@ -219,7 +223,13 @@ function sleep(ms: number) {
 }
 
 export async function processEmotionAnalysis(fileKey: string): Promise<
-  { success: true; dominantEmotion: string; emotions: Record<string, number> } | { error: string }
+  | {
+      success: true;
+      dominantEmotion: string;
+      emotions: Record<string, number>;
+      recommendations: RecommendedCounselor[];
+    }
+  | { error: string }
 > {
   const session = await auth();
   if (!session?.user) return { error: "Unauthorized" };
@@ -336,7 +346,10 @@ export async function processEmotionAnalysis(fileKey: string): Promise<
       return { error: "Failed to save analysis results" };
     }
 
-    return { success: true, dominantEmotion, emotions: averaged };
+    // run the recommendation engine using the freshly saved emotion log
+    const recommendations = await getRecommendedCounselors(profile.id, 3);
+
+    return { success: true, dominantEmotion, emotions: averaged, recommendations };
   } catch {
     return { error: "Something went wrong during analysis. Please try again." };
   }

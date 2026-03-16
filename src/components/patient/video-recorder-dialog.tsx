@@ -272,10 +272,11 @@ export function VideoRecorderDialog({
         return;
       }
 
-      // pass results to parent and auto-close the dialog
+      // pass results (including recommendations) to parent and auto-close the dialog
       onAnalysisComplete?.({
         dominantEmotion: analysisResult.dominantEmotion,
         emotions: analysisResult.emotions,
+        recommendations: analysisResult.recommendations,
       });
       handleOpenChange(false);
     } catch {
