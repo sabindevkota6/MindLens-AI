@@ -24,11 +24,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ShieldCheck, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { RecommendedCounselor } from "@/lib/actions/recommendation";
 
 // shared type for passing analysis data between components
 export interface EmotionAnalysisResult {
   dominantEmotion: string;
   emotions: Record<string, number>;
+  recommendations: RecommendedCounselor[];
 }
 
 // color palette for each emotion bucket — chosen to be calming and distinct
@@ -99,14 +104,38 @@ const EMOTION_MESSAGES: Record<string, { headline: string; subtext: string }> = 
   },
 };
 
+// derives a consistent color set from a counselor's name for the avatar
+const AVATAR_COLORS = [
+  { bg: "bg-blue-100", ring: "ring-blue-200", text: "text-blue-600" },
+  { bg: "bg-emerald-100", ring: "ring-emerald-200", text: "text-emerald-600" },
+  { bg: "bg-slate-100", ring: "ring-slate-200", text: "text-slate-600" },
+  { bg: "bg-violet-100", ring: "ring-violet-200", text: "text-violet-600" },
+  { bg: "bg-amber-100", ring: "ring-amber-200", text: "text-amber-600" },
+  { bg: "bg-cyan-100", ring: "ring-cyan-200", text: "text-cyan-600" },
+];
+
+function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(name: string) {
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+}
+
 interface EmotionResultsProps {
   dominantEmotion: string;
   emotions: Record<string, number>;
+  recommendations: RecommendedCounselor[];
 }
 
 export function EmotionResultsDashboard({
   dominantEmotion,
   emotions,
+  recommendations,
 }: EmotionResultsProps) {
   // controls whether progress bars have animated to their target width
   const [animated, setAnimated] = useState(false);
@@ -181,10 +210,7 @@ export function EmotionResultsDashboard({
           <div className="inline-flex items-center gap-2.5 bg-white border border-gray-200 rounded-full px-5 py-2.5 shadow-sm">
             <div
               className="w-3 h-3 rounded-full ring-4 ring-offset-1"
-              style={{
-                backgroundColor: dominantColor,
-                ringColor: `${dominantColor}20`,
-              }}
+              style={{ backgroundColor: dominantColor }}
             />
             <span className="text-sm font-semibold text-slate-700">
               {dominantEmotion}
@@ -398,35 +424,154 @@ export function EmotionResultsDashboard({
         </Card>
       </div>
 
-      {/* section 3 — recommendation / next step */}
-      <Card className="border border-[#c5e0d8] shadow-sm rounded-2xl overflow-hidden bg-gradient-to-br from-[#edf7f4] via-[#f6fbf9] to-[#eef5f2]">
-        <CardContent className="p-7 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Heart className="w-6 h-6 text-primary" />
+      {/* section 3 — recommended counselors matched by cosine similarity */}
+      <div className="space-y-5">
+        {/* section header with descriptive text */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Heart className="w-[18px] h-[18px] text-primary" />
             </div>
-            <div className="flex-1 space-y-1.5">
-              <h3 className="text-base font-bold text-slate-900">
+            <div>
+              <h3 className="font-semibold text-slate-900 text-[15px]">
                 Recommended For You
               </h3>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Based on your emotional profile, speaking with a specialist
-                who understands{" "}
+              <p className="text-sm text-slate-500 mt-1 leading-relaxed max-w-xl">
+                Based on your results, we recommend speaking with specialists
+                who understand{" "}
                 <span className="font-medium text-slate-700">
                   {dominantEmotion.toLowerCase()}
-                </span>{" "}
-                could provide valuable support and clarity.
+                </span>
+                . These counselors are matched to your emotional profile.
               </p>
             </div>
-            <Link href="/dashboard/patient">
-              <Button className="bg-primary hover:bg-[#00695C] text-white rounded-xl px-6 py-5 text-sm font-semibold gap-2 shadow-sm whitespace-nowrap">
-                Browse Counselors
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
           </div>
-        </CardContent>
-      </Card>
+          <Link
+            href="/dashboard/patient"
+            className="text-sm font-medium text-primary hover:underline flex items-center gap-1 whitespace-nowrap flex-shrink-0"
+          >
+            Browse all
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {recommendations.length === 0 ? (
+          <Card className="border border-gray-200 rounded-2xl bg-white">
+            <CardContent className="p-8 text-center">
+              <p className="text-sm text-slate-500">
+                No counselors matched yet. Please check back after more
+                specialists join.
+              </p>
+              <Link href="/dashboard/patient" className="mt-4 inline-block">
+                <Button className="bg-primary hover:bg-[#00695C] text-white rounded-xl mt-4 text-sm">
+                  Browse Counselors
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {recommendations.map((counselor) => {
+              const avatarColor = getAvatarColor(counselor.fullName);
+              const initials = getInitials(counselor.fullName);
+              const visibleTags = counselor.specialties.slice(0, 3);
+              const overflowCount = counselor.specialties.length - 3;
+
+              return (
+                <Card
+                  key={counselor.id}
+                  className="border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group rounded-2xl py-0"
+                >
+                  <CardContent className="p-0">
+                    {/* avatar section — teal-50 background matching dashboard */}
+                    <div className="relative flex flex-col items-center pt-8 pb-5 bg-teal-50">
+                      <div className="absolute top-3 right-3 flex items-center gap-1 bg-primary text-white text-xs font-medium px-2.5 py-1 rounded-full">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        Verified
+                      </div>
+                      <div
+                        className={cn(
+                          "w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold ring-4",
+                          avatarColor.bg,
+                          avatarColor.ring,
+                          avatarColor.text
+                        )}
+                      >
+                        {initials}
+                      </div>
+                    </div>
+
+                    {/* name and title */}
+                    <div className="px-6 pt-5 pb-2 space-y-0.5">
+                      <h3 className="font-semibold text-gray-900 text-lg">
+                        {counselor.fullName}
+                      </h3>
+                      {counselor.professionalTitle && (
+                        <p className="text-sm text-gray-500">
+                          {counselor.professionalTitle}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* specialty badges */}
+                    {visibleTags.length > 0 && (
+                      <div className="px-6 pb-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {visibleTags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="bg-primary/8 text-primary border border-primary/15 text-xs font-normal px-3 py-0.5 rounded-full"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                          {overflowCount > 0 && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-gray-100 text-gray-500 border-0 text-xs font-normal px-3 py-0.5 rounded-full"
+                            >
+                              +{overflowCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mx-6 border-t border-gray-100" />
+
+                    {/* experience */}
+                    <div className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                        <Clock className="w-3.5 h-3.5 text-gray-400" />
+                        <span>{counselor.experienceYears} years experience</span>
+                      </div>
+                    </div>
+
+                    <div className="mx-6 border-t border-gray-100" />
+
+                    {/* rate */}
+                    <div className="px-6 py-4">
+                      <p className="text-sm font-medium text-primary">
+                        Rs. {counselor.hourlyRate} / session
+                      </p>
+                    </div>
+
+                    {/* book session button */}
+                    <div className="px-6 pb-6">
+                      <Link href={`/dashboard/patient/counselor/${counselor.id}`}>
+                        <Button className="w-full h-11 rounded-xl font-semibold text-sm bg-primary hover:bg-[#00695C] text-white">
+                          Book Session
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

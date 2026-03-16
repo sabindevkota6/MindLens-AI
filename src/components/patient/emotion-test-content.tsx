@@ -51,12 +51,25 @@ const suggestedPrompts = [
   "Daily mood",
 ];
 
+// tab-scoped cache key that  restores the latest report if the user navigates away and returns within the same tab like browsing a counselor profile then going back
+const TAB_CACHE_KEY = "mer_tab_results";
+
 export function EmotionTestContent() {
   const [results, setResults] = useState<EmotionAnalysisResult | null>(null);
   const [resultsKey, setResultsKey] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // smooth scroll to results section when analysis completes
+  // on mount, restore the cached report if one exists in this tab session
+  useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem(TAB_CACHE_KEY);
+      if (cached) setResults(JSON.parse(cached));
+    } catch {
+      sessionStorage.removeItem(TAB_CACHE_KEY);
+    }
+  }, []);
+
+  // scroll to results whenever they are freshly set
   useEffect(() => {
     if (results && resultsRef.current) {
       const timer = setTimeout(() => {
@@ -71,6 +84,11 @@ export function EmotionTestContent() {
 
   // callback passed to the video recorder dialog
   const handleAnalysisComplete = (data: EmotionAnalysisResult) => {
+    try {
+      sessionStorage.setItem(TAB_CACHE_KEY, JSON.stringify(data));
+    } catch {
+      // sessionStorage unavailable (e.g. private browsing with storage blocked) — silently skip
+    }
     setResults(data);
     setResultsKey((k) => k + 1);
   };
@@ -171,6 +189,7 @@ export function EmotionTestContent() {
               key={resultsKey}
               dominantEmotion={results.dominantEmotion}
               emotions={results.emotions}
+              recommendations={results.recommendations}
             />
           </div>
         </section>
