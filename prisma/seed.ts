@@ -9,12 +9,12 @@ const specialties = [
   "Stress Management",
   "Grief & Loss",
   "Anger Management",
-  "Relationship Issues",
-  "Family Therapy",
-  "Addiction",
   "Self-Esteem",
   "OCD",
   "PTSD",
+  "General Counseling",
+  "Behavioral Therapy",
+  "Life Coaching / Transitions",
 ];
 
 async function main() {
