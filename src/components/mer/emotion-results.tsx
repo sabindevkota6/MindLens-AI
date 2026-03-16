@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Heart,
   ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -130,12 +131,16 @@ interface EmotionResultsProps {
   dominantEmotion: string;
   emotions: Record<string, number>;
   recommendations: RecommendedCounselor[];
+  showTakeTestAgain?: boolean;
+  historyLogId?: string; // when from history, so back button returns to this result
 }
 
 export function EmotionResultsDashboard({
   dominantEmotion,
   emotions,
   recommendations,
+  showTakeTestAgain = false,
+  historyLogId,
 }: EmotionResultsProps) {
   // controls whether progress bars have animated to their target width
   const [animated, setAnimated] = useState(false);
@@ -436,9 +441,8 @@ export function EmotionResultsDashboard({
               <h3 className="font-semibold text-slate-900 text-[15px]">
                 Recommended For You
               </h3>
-              <p className="text-sm text-slate-500 mt-1 leading-relaxed max-w-xl">
-                Based on your results, we recommend speaking with specialists
-                who understand{" "}
+              <p className="text-sm text-slate-500 mt-1 leading-relaxed whitespace-nowrap">
+                Based on your results, we recommend speaking with specialists who understand{" "}
                 <span className="font-medium text-slate-700">
                   {dominantEmotion.toLowerCase()}
                 </span>
@@ -557,9 +561,9 @@ export function EmotionResultsDashboard({
                       </p>
                     </div>
 
-                    {/* book session button */}
+                    {/* book session button — pass from= so counselor page shows correct back link */}
                     <div className="px-6 pb-6">
-                      <Link href={`/dashboard/patient/counselor/${counselor.id}`}>
+                      <Link href={`/dashboard/patient/counselor/${counselor.id}?from=${showTakeTestAgain ? "history" : "emotion-test"}${historyLogId ? `&logId=${historyLogId}` : ""}`}>
                         <Button className="w-full h-11 rounded-xl font-semibold text-sm bg-primary hover:bg-[#00695C] text-white">
                           Book Session
                         </Button>
@@ -570,6 +574,33 @@ export function EmotionResultsDashboard({
               );
             })}
           </div>
+        )}
+
+        {/* Take an Emotion Test Again — shown only when viewing from history */}
+        {showTakeTestAgain && (
+          <Card className="border-2 border-primary/20 rounded-2xl bg-gradient-to-br from-teal-50 to-white overflow-hidden">
+            <CardContent className="p-8 md:p-10">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <RefreshCw className="w-7 h-7 text-primary" />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="font-semibold text-slate-900 text-lg mb-1">
+                    Track your emotional journey
+                  </h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">
+                    Emotions change over time. Taking another test helps you see patterns, measure growth, and stay connected with how you feel.
+                  </p>
+                </div>
+                <Link href="/dashboard/patient/emotion-test" className="flex-shrink-0 mt-6">
+                  <Button className="h-12 px-6 rounded-xl font-semibold bg-primary hover:bg-[#00695C] text-white flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4" />
+                    Take an Emotion Test Again
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

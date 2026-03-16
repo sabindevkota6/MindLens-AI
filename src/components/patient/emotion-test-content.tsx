@@ -213,7 +213,7 @@ export function EmotionTestContent() {
 
                       <div className="space-y-3">
                         <h2 className="text-[1.8rem] leading-none font-medium tracking-[-0.03em] text-slate-900">
-                          Take a Emotion test
+                          Take an Emotion Test
                         </h2>
                         <p className="text-[15px] font-medium text-slate-700">
                           Prepare Your Environment

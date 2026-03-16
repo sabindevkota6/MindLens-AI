@@ -65,6 +65,12 @@ export const patientNavLinks: DashboardNavLink[] = [
     match: "appointments",
     description: "patient appointments page",
   },
+  {
+    href: "/dashboard/patient/history",
+    label: "Emotion Analysis History",
+    match: "history",
+    description: "past emotion analysis logs",
+  },
 ];
 
 export const counselorNavLinks: DashboardNavLink[] = [

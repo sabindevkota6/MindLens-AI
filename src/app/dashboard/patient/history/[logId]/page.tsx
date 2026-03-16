@@ -99,6 +99,8 @@ export default async function EmotionLogDetailPage({ params }: Props) {
             dominantEmotion={log.dominantEmotion}
             emotions={emotions}
             recommendations={recommendations}
+            showTakeTestAgain
+            historyLogId={logId}
           />
         </div>
       </section>
