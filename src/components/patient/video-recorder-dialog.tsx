@@ -274,6 +274,7 @@ export function VideoRecorderDialog({
 
       // pass results (including recommendations) to parent and auto-close the dialog
       onAnalysisComplete?.({
+        logId: analysisResult.logId,
         dominantEmotion: analysisResult.dominantEmotion,
         emotions: analysisResult.emotions,
         recommendations: analysisResult.recommendations,

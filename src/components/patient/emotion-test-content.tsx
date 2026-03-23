@@ -190,6 +190,7 @@ export function EmotionTestContent() {
               dominantEmotion={results.dominantEmotion}
               emotions={results.emotions}
               recommendations={results.recommendations}
+              reportLogId={results.logId}
             />
           </div>
         </section>

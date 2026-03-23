@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getEmotionLogById } from "@/lib/actions/history";
 import { getRecommendedCounselors } from "@/lib/actions/recommendation";
+import { buildReportPayload } from "@/lib/emotion-report-payload";
 import { EmotionResultsDashboard } from "@/components/mer/emotion-results";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 
@@ -25,23 +26,11 @@ export default async function EmotionLogDetailPage({ params }: Props) {
   const { log, profileId } = result;
 
   // extract the aggregated emotion scores from the stored json
-  const json = log.humeAnalysisJson as { aggregated?: Record<string, number> };
-  const emotions = json.aggregated;
-
-  if (!emotions) notFound();
-
-  // generate fresh recommendations based on this patient's latest log
   const recommendations = await getRecommendedCounselors(profileId, 3);
+  const reportPayload = buildReportPayload(log);
+  if (!reportPayload) notFound();
 
-  // format the date for the page header
-  const formattedDate = new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(new Date(log.recordedAt));
+  const emotions = reportPayload.emotions;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,7 +53,7 @@ export default async function EmotionLogDetailPage({ params }: Props) {
                 </span>
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight">
-                {formattedDate}
+                {reportPayload.headerDateFormatted}
               </h1>
               <p className="text-white/70 text-sm">
                 Primary emotional state:{" "}
@@ -101,6 +90,7 @@ export default async function EmotionLogDetailPage({ params }: Props) {
             recommendations={recommendations}
             showTakeTestAgain
             historyLogId={logId}
+            reportLogId={logId}
           />
         </div>
       </section>

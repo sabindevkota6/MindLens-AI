@@ -6,7 +6,7 @@ import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
-  PolarRadiusAxis,
+  PolarRadiusAxis
 } from "recharts";
 import {
   ChartContainer,
@@ -29,102 +29,21 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RecommendedCounselor } from "@/lib/actions/recommendation";
+import {
+  EMOTION_COLORS,
+  EMOTION_LIGHT_BG,
+  EMOTION_MESSAGES,
+  getAvatarTailwind,
+  getInitials,
+} from "@/lib/emotion-report-constants";
+import { EmotionReportDownloadButton } from "@/components/patient/emotion-report-download-button";
 
 // shared type for passing analysis data between components
 export interface EmotionAnalysisResult {
+  logId?: string;
   dominantEmotion: string;
   emotions: Record<string, number>;
   recommendations: RecommendedCounselor[];
-}
-
-// color palette for each emotion bucket — chosen to be calming and distinct
-const EMOTION_COLORS: Record<string, string> = {
-  Fear: "#818cf8",
-  Sadness: "#60a5fa",
-  Anger: "#f87171",
-  Disgust: "#4ade80",
-  Happiness: "#fbbf24",
-  Surprise: "#22d3ee",
-  Neutral: "#94a3b8",
-  "Confusion & Overwhelm": "#c084fc",
-};
-
-// lighter tints used as secondary accents for each emotion
-const EMOTION_LIGHT_BG: Record<string, string> = {
-  Fear: "#eef2ff",
-  Sadness: "#eff6ff",
-  Anger: "#fef2f2",
-  Disgust: "#f0fdf4",
-  Happiness: "#fefce8",
-  Surprise: "#ecfeff",
-  Neutral: "#f8fafc",
-  "Confusion & Overwhelm": "#faf5ff",
-};
-
-// empathetic messages tailored to each dominant emotion
-const EMOTION_MESSAGES: Record<string, { headline: string; subtext: string }> = {
-  Fear: {
-    headline: "Your analysis suggests a heightened state of alertness.",
-    subtext:
-      "Fear is your body's natural protection system. Recognizing it is a powerful step toward understanding yourself better.",
-  },
-  Sadness: {
-    headline: "Your analysis reflects a quiet, introspective emotional state.",
-    subtext:
-      "Sadness is a deeply human experience. Acknowledging it shows real emotional awareness and inner strength.",
-  },
-  Anger: {
-    headline: "Your analysis indicates strong emotional intensity.",
-    subtext:
-      "Anger often signals that something important to you needs attention. Understanding its roots can bring clarity.",
-  },
-  Disgust: {
-    headline: "Your analysis shows a strong reactive response.",
-    subtext:
-      "This emotion often relates to personal boundaries. Understanding what triggers it can help you navigate situations more clearly.",
-  },
-  Happiness: {
-    headline: "Your analysis radiates a positive emotional state.",
-    subtext:
-      "This is wonderful to see. Understanding what brings you joy can help you sustain it in your daily life.",
-  },
-  Surprise: {
-    headline: "Your analysis captures a state of heightened awareness.",
-    subtext:
-      "Surprise reflects your mind actively processing something unexpected. It's a sign of deep engagement with your world.",
-  },
-  Neutral: {
-    headline: "Your analysis shows a calm, balanced emotional state.",
-    subtext:
-      "A neutral state reflects composure. It can also mean your deeper feelings need a bit more exploration to surface.",
-  },
-  "Confusion & Overwhelm": {
-    headline: "Your analysis suggests a complex emotional landscape.",
-    subtext:
-      "Feeling overwhelmed is completely natural. It often means you're processing many things at once — and that's okay.",
-  },
-};
-
-// derives a consistent color set from a counselor's name for the avatar
-const AVATAR_COLORS = [
-  { bg: "bg-blue-100", ring: "ring-blue-200", text: "text-blue-600" },
-  { bg: "bg-emerald-100", ring: "ring-emerald-200", text: "text-emerald-600" },
-  { bg: "bg-slate-100", ring: "ring-slate-200", text: "text-slate-600" },
-  { bg: "bg-violet-100", ring: "ring-violet-200", text: "text-violet-600" },
-  { bg: "bg-amber-100", ring: "ring-amber-200", text: "text-amber-600" },
-  { bg: "bg-cyan-100", ring: "ring-cyan-200", text: "text-cyan-600" },
-];
-
-function getAvatarColor(name: string) {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-function getInitials(name: string) {
-  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
 interface EmotionResultsProps {
@@ -133,6 +52,7 @@ interface EmotionResultsProps {
   recommendations: RecommendedCounselor[];
   showTakeTestAgain?: boolean;
   historyLogId?: string; // when from history, so back button returns to this result
+  reportLogId?: string; // id for downloadable report (same row in DB)
 }
 
 export function EmotionResultsDashboard({
@@ -141,6 +61,7 @@ export function EmotionResultsDashboard({
   recommendations,
   showTakeTestAgain = false,
   historyLogId,
+  reportLogId,
 }: EmotionResultsProps) {
   // controls whether progress bars have animated to their target width
   const [animated, setAnimated] = useState(false);
@@ -196,6 +117,12 @@ export function EmotionResultsDashboard({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+      {reportLogId ? (
+        <div className="flex justify-end">
+          <EmotionReportDownloadButton logId={reportLogId} />
+        </div>
+      ) : null}
+
       {/* section 1 — empathetic summary with decorative background */}
       <div className="relative rounded-2xl bg-gradient-to-br from-[#e0f2ef] via-[#f5faf9] to-[#e8f0fa] border border-[#b3d9cf] p-8 md:p-10 text-center overflow-hidden">
         <div className="absolute top-0 right-0 w-72 h-72 bg-primary/[0.08] rounded-full -translate-y-1/3 translate-x-1/3 pointer-events-none" />
@@ -476,7 +403,7 @@ export function EmotionResultsDashboard({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {recommendations.map((counselor) => {
-              const avatarColor = getAvatarColor(counselor.fullName);
+              const avatarColor = getAvatarTailwind(counselor.fullName);
               const initials = getInitials(counselor.fullName);
               const visibleTags = counselor.specialties.slice(0, 3);
               const overflowCount = counselor.specialties.length - 3;

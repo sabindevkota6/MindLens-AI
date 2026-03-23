@@ -225,6 +225,7 @@ function sleep(ms: number) {
 export async function processEmotionAnalysis(fileKey: string): Promise<
   | {
       success: true;
+      logId: string;
       dominantEmotion: string;
       emotions: Record<string, number>;
       recommendations: RecommendedCounselor[];
@@ -346,10 +347,18 @@ export async function processEmotionAnalysis(fileKey: string): Promise<
       return { error: "Failed to save analysis results" };
     }
 
+    const logId = saveResult.value.id;
+
     // run the recommendation engine using the freshly saved emotion log
     const recommendations = await getRecommendedCounselors(profile.id, 3);
 
-    return { success: true, dominantEmotion, emotions: averaged, recommendations };
+    return {
+      success: true,
+      logId,
+      dominantEmotion,
+      emotions: averaged,
+      recommendations,
+    };
   } catch {
     return { error: "Something went wrong during analysis. Please try again." };
   }
