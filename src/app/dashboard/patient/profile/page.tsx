@@ -33,6 +33,11 @@ export default async function PatientProfilePage() {
     );
   }
 
+  const isProfileComplete = profile.isOnboarded && profile.dateOfBirth;
+  if (!isProfileComplete) {
+    redirect("/dashboard/patient/onboarding");
+  }
+
   const initials = profile.fullName
     .split(" ")
     .map((n) => n[0])

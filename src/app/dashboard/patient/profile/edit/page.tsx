@@ -22,6 +22,11 @@ export default async function EditPatientProfilePage() {
     );
   }
 
+  const isProfileComplete = profile.isOnboarded && profile.dateOfBirth;
+  if (!isProfileComplete) {
+    redirect("/dashboard/patient/onboarding");
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-primary pt-20 pb-10 px-4 md:px-8">

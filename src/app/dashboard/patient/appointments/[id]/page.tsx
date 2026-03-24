@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getAppointmentDetail } from "@/lib/actions/appointment";
+import { getPatientProfile } from "@/lib/actions/patient";
 import { AppointmentDetailView } from "@/components/shared/appointment-detail-view";
 import type { AppointmentDetail } from "@/components/shared/appointment-detail-view";
 
@@ -13,6 +14,10 @@ interface PageProps {
 export default async function PatientAppointmentDetailPage({ params }: PageProps) {
   const session = await auth();
   if (!session?.user || session.user.role !== "PATIENT") redirect("/login");
+
+  const profile = await getPatientProfile();
+  const isProfileComplete = profile?.isOnboarded && profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/patient/onboarding");
 
   const { id } = await params;
   const appointment = await getAppointmentDetail(id);

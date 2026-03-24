@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getEmotionLogById } from "@/lib/actions/history";
+import { getPatientProfile } from "@/lib/actions/patient";
 import { getRecommendedCounselors } from "@/lib/actions/recommendation";
 import { buildReportPayload } from "@/lib/emotion-report-payload";
 import { EmotionResultsDashboard } from "@/components/mer/emotion-results";
@@ -16,6 +17,10 @@ export default async function EmotionLogDetailPage({ params }: Props) {
   if (!session?.user || session.user.role !== "PATIENT") {
     redirect("/login");
   }
+
+  const profile = await getPatientProfile();
+  const isProfileComplete = profile?.isOnboarded && profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/patient/onboarding");
 
   const { logId } = await params;
 

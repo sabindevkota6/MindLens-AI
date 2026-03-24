@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getEmotionHistory } from "@/lib/actions/history";
+import { getPatientProfile } from "@/lib/actions/patient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,10 @@ export default async function EmotionHistoryPage() {
   if (!session?.user || session.user.role !== "PATIENT") {
     redirect("/login");
   }
+
+  const profile = await getPatientProfile();
+  const isProfileComplete = profile?.isOnboarded && profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/patient/onboarding");
 
   const logs = await getEmotionHistory();
 

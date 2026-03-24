@@ -1,5 +1,7 @@
+import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getCounselorDetail } from "@/lib/actions/counselor";
+import { getPatientProfile } from "@/lib/actions/patient";
 import { CounselorDetailView } from "@/components/patient/counselor-detail-view";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -11,6 +13,15 @@ interface CounselorPageProps {
 }
 
 export default async function CounselorPage({ params, searchParams }: CounselorPageProps) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "PATIENT") {
+    redirect("/login");
+  }
+
+  const profile = await getPatientProfile();
+  const isProfileComplete = profile?.isOnboarded && profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/patient/onboarding");
+
   const { id } = await params;
   const { from, logId } = await searchParams;
   const counselor = await getCounselorDetail(id);

@@ -1,12 +1,17 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getAppointments } from "@/lib/actions/appointment";
+import { getPatientProfile } from "@/lib/actions/patient";
 import { AppointmentsList } from "@/components/shared/appointments-list";
 import { Calendar } from "lucide-react";
 
 export default async function PatientAppointmentsPage() {
   const session = await auth();
   if (!session?.user || session.user.role !== "PATIENT") redirect("/login");
+
+  const profile = await getPatientProfile();
+  const isProfileComplete = profile?.isOnboarded && profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/patient/onboarding");
 
   const { appointments, totalPages } = await getAppointments("upcoming", 1);
 
