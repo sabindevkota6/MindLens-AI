@@ -948,6 +948,7 @@ export const saveRecurringSchedule = async (values: {
             }
 
 
+            // 3. Delete pure empty slots
             await tx.availabilitySlot.deleteMany({
                 where: {
                     counselorProfileId: profile.id,
@@ -957,60 +958,77 @@ export const saveRecurringSchedule = async (values: {
                 },
             });
 
-            const disabledDays = values.schedule.filter((d) => !d.enabled).map((d) => d.dayOfWeek);
-            if (disabledDays.length > 0) {
-                const zombieSlots = await tx.availabilitySlot.findMany({
-                    where: {
-                        counselorProfileId: profile.id,
-                        startTime: { gt: new Date() },
-                        isBooked: false,
-                        isBlocked: false,
-                        appointment: { isNot: null },
-                    },
-                    select: { id: true, startTime: true },
-                });
-                const idsToBlock = zombieSlots
-                    .filter((s) => disabledDays.includes(s.startTime.getDay()))
-                    .map((s) => s.id);
-                if (idsToBlock.length > 0) {
-                    await tx.availabilitySlot.updateMany({
-                        where: { id: { in: idsToBlock } },
+            // 4. Generate new slots from schedule
+            const newSlots = generateSlotsFromSchedule(entries, GENERATION_WEEKS);
+
+            // 5. Manage existing slots and resolve conflicts
+            const existingSlots = await tx.availabilitySlot.findMany({
+                where: {
+                    counselorProfileId: profile.id,
+                    startTime: { gt: new Date() },
+                },
+                select: { id: true, startTime: true, endTime: true, isBooked: true, isBlocked: true },
+            });
+
+            const slotsToInsert = [];
+
+            for (const nSlot of newSlots) {
+                const overlaps = existingSlots.filter(
+                    (e) => nSlot.startTime < e.endTime && nSlot.endTime > e.startTime
+                );
+
+                if (overlaps.length === 0) {
+                    slotsToInsert.push(nSlot);
+                } else {
+                    let madeAvailable = false;
+                    for (const overlap of overlaps) {
+                        if (overlap.isBooked) {
+                            madeAvailable = true;
+                        } else if (!madeAvailable) {
+                            if (overlap.isBlocked) {
+                                await tx.availabilitySlot.update({
+                                    where: { id: overlap.id },
+                                    data: { isBlocked: false },
+                                });
+                                overlap.isBlocked = false;
+                            }
+                            madeAvailable = true;
+                        } else if (madeAvailable && !overlap.isBooked && !overlap.isBlocked) {
+                            await tx.availabilitySlot.update({
+                                where: { id: overlap.id },
+                                data: { isBlocked: true },
+                            });
+                            overlap.isBlocked = true;
+                        }
+                    }
+                }
+            }
+
+            // 6. Block leftover unfilled existing slots that fall outside the schedule
+            for (const eSlot of existingSlots) {
+                if (eSlot.isBooked) continue;
+
+                const isCoveredByNew = newSlots.some(
+                    (nSlot) => nSlot.startTime <= eSlot.startTime && nSlot.endTime >= eSlot.endTime
+                );
+
+                if (!isCoveredByNew && !eSlot.isBlocked) {
+                    await tx.availabilitySlot.update({
+                        where: { id: eSlot.id },
                         data: { isBlocked: true },
                     });
                 }
             }
 
-            // 4. Generate new slots from schedule
-            const newSlots = generateSlotsFromSchedule(entries, GENERATION_WEEKS);
-
-            // 5. Avoid conflicts with remaining booked slots
-            if (newSlots.length > 0) {
-                const bookedSlots = await tx.availabilitySlot.findMany({
-                    where: {
+            // 7. Insert the generated non-conflicting slots
+            if (slotsToInsert.length > 0) {
+                await tx.availabilitySlot.createMany({
+                    data: slotsToInsert.map((s) => ({
                         counselorProfileId: profile.id,
-                        startTime: { gt: new Date() },
-                        isBooked: true,
-                    },
-                    select: { startTime: true, endTime: true },
+                        startTime: s.startTime,
+                        endTime: s.endTime,
+                    })),
                 });
-
-                const nonConflicting = newSlots.filter(
-                    (slot) =>
-                        !bookedSlots.some(
-                            (booked) =>
-                                slot.startTime < booked.endTime && slot.endTime > booked.startTime
-                        )
-                );
-
-                if (nonConflicting.length > 0) {
-                    await tx.availabilitySlot.createMany({
-                        data: nonConflicting.map((s) => ({
-                            counselorProfileId: profile.id,
-                            startTime: s.startTime,
-                            endTime: s.endTime,
-                        })),
-                    });
-                }
             }
         });
 
