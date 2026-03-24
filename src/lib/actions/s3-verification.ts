@@ -79,7 +79,7 @@ export const submitVerificationRecord = async (fileKey: string) => {
             // set status back to pending after resubmission
             await tx.counselorProfile.update({
                 where: { id: profile.id },
-                data: { verificationStatus: "PENDING" },
+                data: { verificationStatus: "PENDING", isOnboarded: true },
             });
         });
 

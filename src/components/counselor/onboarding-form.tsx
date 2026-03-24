@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CounselorOnboardingSchema } from "@/lib/schemas";
-import { completeCounselorProfile } from "@/lib/actions/counselor";
+import {
+  completeCounselorProfile,
+  markCounselorOnboardingComplete,
+} from "@/lib/actions/counselor";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -57,7 +60,6 @@ export default function CounselorOnboardingForm({
 }: CounselorOnboardingFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [profileDone, setProfileDone] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -128,8 +130,6 @@ export default function CounselorOnboardingForm({
       if (res.error) {
         setMessage({ type: "error", text: res.error });
       } else {
-        // profile saved, move to step 3 for document upload
-        setProfileDone(true);
         setStep(3);
       }
     });
@@ -491,6 +491,10 @@ export default function CounselorOnboardingForm({
             </p>
           </div>
 
+          {message?.type === "error" && (
+            <p className="text-sm font-medium text-destructive">{message.text}</p>
+          )}
+
           <DocumentUploader
             onSuccess={() => {
               router.push("/dashboard/counselor");
@@ -498,11 +502,22 @@ export default function CounselorOnboardingForm({
             }}
           />
 
-          {/* let them skip for now and go to the dashboard */}
           <button
             type="button"
-            onClick={() => router.push("/dashboard/counselor")}
-            className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors pt-1"
+            disabled={isPending}
+            onClick={() => {
+              setMessage(null);
+              startTransition(async () => {
+                const res = await markCounselorOnboardingComplete();
+                if (res.error) {
+                  setMessage({ type: "error", text: res.error });
+                  return;
+                }
+                router.push("/dashboard/counselor");
+                router.refresh();
+              });
+            }}
+            className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors pt-1 disabled:opacity-50"
           >
             Skip for now
           </button>

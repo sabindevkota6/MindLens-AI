@@ -154,7 +154,6 @@ export const completeCounselorProfile = async (values: z.infer<typeof CounselorO
                     experienceYears: validated.data.experienceYears,
                     hourlyRate: validated.data.hourlyRate,
                     dateOfBirth: new Date(validated.data.dateOfBirth),
-                    isOnboarded: true,
                 },
             });
 
@@ -211,7 +210,23 @@ export const completeCounselorProfile = async (values: z.infer<typeof CounselorO
     }
 };
 
-
+/** Call after onboarding step 3 when the counselor skips document upload. */
+export const markCounselorOnboardingComplete = async () => {
+    const session = await auth();
+    if (!session || session.user.role !== "COUNSELOR") {
+        return { error: "Unauthorized" };
+    }
+    try {
+        await prisma.counselorProfile.update({
+            where: { userId: session.user.id },
+            data: { isOnboarded: true },
+        });
+        revalidatePath("/dashboard/counselor");
+        return { success: true as const };
+    } catch {
+        return { error: "Failed to complete onboarding." };
+    }
+};
 
 export interface SearchCounselorsParams {
     query?: string;
