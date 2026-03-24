@@ -211,44 +211,7 @@ export const completeCounselorProfile = async (values: z.infer<typeof CounselorO
     }
 };
 
-// upload verification document action
-export const uploadVerificationDoc = async (formData: FormData) => {
-    const session = await auth();
-    if (!session || session.user.role !== "COUNSELOR") {
-        return { error: "Unauthorized" };
-    }
 
-    const file = formData.get("file") as File;
-    if (!file) {
-        return { error: "No file provided" };
-    }
-
-    // TODO: Integrate 'upload-local.ts' logic here when available.
-    // For now, we'll return success to simulate the flow AND create a dummy record
-    // so the "isProfileComplete" check passes (hasDocs).
-
-    const profile = await prisma.counselorProfile.findUnique({
-        where: { userId: session.user.id }
-    });
-
-    if (!profile) {
-        return { error: "Profile not found" };
-    }
-
-    // Create a mock document record
-    await prisma.verificationDocument.create({
-        data: {
-            counselorProfileId: profile.id,
-            documentUrl: "https://placehold.co/document-mock.pdf", // Mock URL
-        }
-    });
-
-    // Simulating delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    revalidatePath("/dashboard/counselor");
-    return { success: "Document uploaded successfully!" };
-};
 
 export interface SearchCounselorsParams {
     query?: string;

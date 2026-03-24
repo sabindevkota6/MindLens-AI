@@ -6,7 +6,7 @@ import CounselorOnboardingForm from "@/components/counselor/onboarding-form";
 
 export default async function CounselorOnboardingPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user || session.user.role !== "COUNSELOR") redirect("/login");
 
   const [profile, specialties] = await Promise.all([
     getCounselorProfile(),

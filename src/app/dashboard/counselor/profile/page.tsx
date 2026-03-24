@@ -18,8 +18,11 @@ import {
   FileText,
   ArrowLeft,
   ShieldCheck,
+  AlertTriangle,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DocumentUploadDialog } from "@/components/counselor/document-upload-dialog";
 
 export default async function CounselorProfilePage() {
@@ -37,6 +40,17 @@ export default async function CounselorProfilePage() {
         <p className="text-gray-500">Profile not found. Please contact support.</p>
       </div>
     );
+  }
+
+  const isProfileComplete =
+    profile.isOnboarded &&
+    profile.professionalTitle &&
+    profile.bio &&
+    profile.experienceYears != null &&
+    profile.hourlyRate != null &&
+    profile.dateOfBirth;
+  if (!isProfileComplete) {
+    redirect("/dashboard/counselor/onboarding");
   }
 
   const initials = profile.fullName
@@ -71,8 +85,42 @@ export default async function CounselorProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Green banner header */}
-      <div className="bg-primary pt-20 pb-10 px-4 md:px-8">
+      {/* pending verification alert */}
+      {profile.verificationStatus === "PENDING" && (
+        <div className="pt-20 px-4 md:px-8">
+          <div className="max-w-4xl mx-auto">
+            <Alert className="border-amber-200 bg-amber-50">
+              <Clock className="h-4 w-4 !text-amber-600" />
+              <AlertTitle className="text-amber-800 font-semibold">Account Under Review</AlertTitle>
+              <AlertDescription className="text-amber-700">
+                Your account is currently under review by administrators. You will be visible in the marketplace once approved.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      )}
+
+      {/* rejected verification alert */}
+      {profile.verificationStatus === "REJECTED" && (
+        <div className="pt-20 px-4 md:px-8">
+          <div className="max-w-4xl mx-auto">
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 !text-red-600" />
+              <AlertTitle className="text-red-800 font-semibold">Verification Rejected</AlertTitle>
+              <AlertDescription className="text-red-700">
+                Your documents were rejected. Please re-upload a valid professional license or certificate below.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      )}
+
+      {/* green banner header */}
+      <div className={`bg-primary pb-10 px-4 md:px-8 ${
+        profile.verificationStatus === "PENDING" || profile.verificationStatus === "REJECTED"
+          ? "pt-4"
+          : "pt-20"
+      }`}>
         <div className="max-w-4xl mx-auto space-y-4">
           {/* Back link */}
           <Link

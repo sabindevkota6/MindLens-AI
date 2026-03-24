@@ -25,6 +25,17 @@ export default async function EditCounselorProfilePage() {
         );
     }
 
+    const isProfileComplete =
+        profile.isOnboarded &&
+        profile.professionalTitle &&
+        profile.bio &&
+        profile.experienceYears != null &&
+        profile.hourlyRate != null &&
+        profile.dateOfBirth;
+    if (!isProfileComplete) {
+        redirect("/dashboard/counselor/onboarding");
+    }
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Green banner header */}

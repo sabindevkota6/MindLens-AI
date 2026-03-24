@@ -36,7 +36,14 @@ export default async function AvailabilityPage() {
     getSlotStats(userId),
   ]);
 
-  if (!profile?.isOnboarded) redirect("/dashboard/counselor/onboarding");
+  const isProfileComplete =
+    profile?.isOnboarded &&
+    profile?.professionalTitle &&
+    profile?.bio &&
+    profile?.experienceYears != null &&
+    profile?.hourlyRate != null &&
+    profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/counselor/onboarding");
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">

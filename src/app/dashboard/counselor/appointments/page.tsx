@@ -1,12 +1,23 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getAppointments } from "@/lib/actions/appointment";
+import { getCounselorProfile } from "@/lib/actions/counselor";
 import { AppointmentsList } from "@/components/shared/appointments-list";
 import { Calendar } from "lucide-react";
 
 export default async function CounselorAppointmentsPage() {
   const session = await auth();
   if (!session?.user || session.user.role !== "COUNSELOR") redirect("/login");
+
+  const profile = await getCounselorProfile();
+  const isProfileComplete =
+    profile?.isOnboarded &&
+    profile?.professionalTitle &&
+    profile?.bio &&
+    profile?.experienceYears != null &&
+    profile?.hourlyRate != null &&
+    profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/counselor/onboarding");
 
   const { appointments, totalPages } = await getAppointments("upcoming", 1);
 

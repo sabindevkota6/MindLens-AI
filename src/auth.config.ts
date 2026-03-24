@@ -6,19 +6,27 @@ export const authConfig = {
     signIn: "/login",
   },
   callbacks: {
-    // add role and id to jwt
-    jwt({ token, user }) {
+    // add role, id, and onboarding status to jwt
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+        token.isOnboarded = user.isOnboarded;
       }
+      
+      // if the token is being refreshed (like after onboarding completes), merge the new status
+      if (trigger === "update" && session?.isOnboarded !== undefined) {
+        token.isOnboarded = session.isOnboarded;
+      }
+      
       return token;
     },
-    // add role and id to session
+    // add role, id, and onboarding status to session
     session({ session, token }) {
       if (session.user && token.role) {
         session.user.role = token.role as string;
         session.user.id = token.id as string;
+        session.user.isOnboarded = token.isOnboarded as boolean;
       }
       return session;
     },

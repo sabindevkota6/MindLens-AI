@@ -8,6 +8,7 @@ import { completeCounselorProfile } from "@/lib/actions/counselor";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { DocumentUploader } from "@/components/counselor/document-uploader";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ import {
   Star,
   Plus,
   X,
+  ShieldCheck,
 } from "lucide-react";
 
 type OnboardingValues = z.infer<typeof CounselorOnboardingSchema>;
@@ -55,6 +57,7 @@ export default function CounselorOnboardingForm({
 }: CounselorOnboardingFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [profileDone, setProfileDone] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -107,7 +110,7 @@ export default function CounselorOnboardingForm({
   };
 
   const handleNext = async () => {
-    // Validate step 1 fields before advancing
+    // validate step 1 fields before advancing
     const valid = await form.trigger(["dateOfBirth", "phoneNumber"]);
     if (valid) {
       setStep(2);
@@ -125,12 +128,9 @@ export default function CounselorOnboardingForm({
       if (res.error) {
         setMessage({ type: "error", text: res.error });
       } else {
-        setMessage({
-          type: "success",
-          text: res.success || "Profile completed!",
-        });
-        router.push("/dashboard/counselor");
-        router.refresh();
+        // profile saved, move to step 3 for document upload
+        setProfileDone(true);
+        setStep(3);
       }
     });
   };
@@ -161,7 +161,7 @@ export default function CounselorOnboardingForm({
   return (
     <Form {...form}>
       <form onSubmit={handleFormSubmit} className="space-y-5">
-        {/* Step Indicator */}
+        {/* step indicator */}
         <div className="flex items-center justify-center gap-2 mb-2">
           <Badge
             variant={step === 1 ? "default" : "secondary"}
@@ -175,29 +175,31 @@ export default function CounselorOnboardingForm({
           >
             {step > 1 ? <CheckCircle className="w-4 h-4" /> : "1"}
           </Badge>
-          <div
-            className={`h-1 w-12 rounded-full ${
-              step > 1 ? "bg-emerald-500" : "bg-gray-200"
-            }`}
-          />
+          <div className={`h-1 w-10 rounded-full ${step > 1 ? "bg-emerald-500" : "bg-gray-200"}`} />
           <Badge
             variant={step === 2 ? "default" : "secondary"}
             className={`rounded-full w-8 h-8 flex items-center justify-center p-0 ${
-              step === 2 ? "bg-primary" : ""
+              step === 2 ? "bg-primary" : step > 2 ? "bg-emerald-500 text-white" : ""
             }`}
           >
-            2
+            {step > 2 ? <CheckCircle className="w-4 h-4" /> : "2"}
+          </Badge>
+          <div className={`h-1 w-10 rounded-full ${step > 2 ? "bg-emerald-500" : "bg-gray-200"}`} />
+          <Badge
+            variant={step === 3 ? "default" : "secondary"}
+            className={`rounded-full w-8 h-8 flex items-center justify-center p-0 ${
+              step === 3 ? "bg-primary" : ""
+            }`}
+          >
+            3
           </Badge>
         </div>
 
-        {/* Step labels */}
-        <div className="flex justify-between text-xs text-gray-500 px-2">
-          <span className={step === 1 ? "text-primary font-medium" : ""}>
-            Personal Info
-          </span>
-          <span className={step === 2 ? "text-primary font-medium" : ""}>
-            Professional Details
-          </span>
+        {/* step labels */}
+        <div className="flex justify-between text-xs text-gray-500">
+          <span className={step === 1 ? "text-primary font-medium" : ""}>Personal Info</span>
+          <span className={step === 2 ? "text-primary font-medium" : ""}>Professional</span>
+          <span className={step === 3 ? "text-primary font-medium" : ""}>Verification</span>
         </div>
 
         {/* ── STEP 1: Personal Info ── */}
@@ -446,7 +448,7 @@ export default function CounselorOnboardingForm({
             </div>
           )}
 
-          {/* Back & Submit Buttons */}
+          {/* back and submit buttons */}
           <div className="flex gap-3">
             <Button
               type="button"
@@ -464,13 +466,46 @@ export default function CounselorOnboardingForm({
               {isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Completing...
+                  Saving...
                 </>
               ) : (
-                "Complete Profile"
+                <>
+                  Next Step <ArrowRight className="w-4 h-4 ml-2" />
+                </>
               )}
             </Button>
           </div>
+        </div>
+
+        {/* step 3: verification document upload */}
+        <div className={step === 3 ? "block space-y-5" : "hidden"}>
+          <div className="text-center space-y-1 pb-2">
+            <div className="flex justify-center mb-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-primary" />
+              </div>
+            </div>
+            <h3 className="text-base font-semibold text-gray-900">Upload Verification Document</h3>
+            <p className="text-sm text-gray-500">
+              Upload your professional license or certificate so the admin team can verify your account.
+            </p>
+          </div>
+
+          <DocumentUploader
+            onSuccess={() => {
+              router.push("/dashboard/counselor");
+              router.refresh();
+            }}
+          />
+
+          {/* let them skip for now and go to the dashboard */}
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/counselor")}
+            className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors pt-1"
+          >
+            Skip for now
+          </button>
         </div>
       </form>
     </Form>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getAppointmentDetail } from "@/lib/actions/appointment";
+import { getCounselorProfile } from "@/lib/actions/counselor";
 import { AppointmentDetailView } from "@/components/shared/appointment-detail-view";
 import type { AppointmentDetail } from "@/components/shared/appointment-detail-view";
 
@@ -13,6 +14,16 @@ interface PageProps {
 export default async function CounselorAppointmentDetailPage({ params }: PageProps) {
   const session = await auth();
   if (!session?.user || session.user.role !== "COUNSELOR") redirect("/login");
+
+  const profile = await getCounselorProfile();
+  const isProfileComplete =
+    profile?.isOnboarded &&
+    profile?.professionalTitle &&
+    profile?.bio &&
+    profile?.experienceYears != null &&
+    profile?.hourlyRate != null &&
+    profile?.dateOfBirth;
+  if (!isProfileComplete) redirect("/dashboard/counselor/onboarding");
 
   const { id } = await params;
   const appointment = await getAppointmentDetail(id);
