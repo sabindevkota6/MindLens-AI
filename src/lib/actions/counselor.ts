@@ -203,6 +203,7 @@ export const completeCounselorProfile = async (values: z.infer<typeof CounselorO
         });
 
         revalidatePath("/dashboard/counselor");
+        revalidatePath("/dashboard/counselor/onboarding");
         return { success: "Profile completed successfully!" };
     } catch (error) {
         console.error("Profile completion error:", error);
@@ -222,6 +223,8 @@ export const markCounselorOnboardingComplete = async () => {
             data: { isOnboarded: true },
         });
         revalidatePath("/dashboard/counselor");
+        revalidatePath("/dashboard/counselor/onboarding");
+        revalidatePath("/dashboard/counselor/profile");
         return { success: true as const };
     } catch {
         return { error: "Failed to complete onboarding." };

@@ -49,7 +49,7 @@ export function DashboardFooter({ role }: { role: string }) {
   const config = role === "COUNSELOR" ? counselorLinks : patientLinks;
 
   return (
-    <footer className="bg-primary text-white py-12 px-6 lg:px-8">
+    <footer className="shrink-0 bg-primary text-white py-12 px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-4 gap-12 mb-8">
           <div>

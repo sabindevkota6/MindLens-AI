@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { auth } from "@/auth";
@@ -32,7 +33,16 @@ export const getVerificationUploadUrl = async (contentType: string) => {
         return { error: "Invalid file type. Only PDF, JPG, and PNG are allowed." };
     }
 
-    const fileKey = `verifications/${session.user.id}-${Date.now()}`;
+    const profile = await prisma.counselorProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+    });
+
+    if (!profile) {
+        return { error: "Profile not found" };
+    }
+
+    const fileKey = `verifications/${profile.id}/${Date.now()}-${randomUUID()}`;
 
     const command = new PutObjectCommand({
         Bucket: BUCKET,
@@ -64,6 +74,15 @@ export const submitVerificationRecord = async (fileKey: string) => {
         return { error: "Profile not found" };
     }
 
+    const nestedPrefix = `verifications/${profile.id}/`;
+    const legacyFlatPrefix = `verifications/${session.user.id}-`;
+    const isNestedKey = fileKey.startsWith(nestedPrefix);
+    const isLegacyKey =
+        fileKey.startsWith(legacyFlatPrefix) && fileKey.split("/").length === 2;
+    if (!isNestedKey && !isLegacyKey) {
+        return { error: "Invalid document key" };
+    }
+
     // build the public s3 url from the bucket and key
     const documentUrl = `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
 
@@ -84,6 +103,7 @@ export const submitVerificationRecord = async (fileKey: string) => {
         });
 
         revalidatePath("/dashboard/counselor");
+        revalidatePath("/dashboard/counselor/onboarding");
         revalidatePath("/dashboard/counselor/profile");
 
         return { success: "Verification document submitted successfully!" };

@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getCounselorProfile, getAllSpecialties } from "@/lib/actions/counselor";
+import { isCounselorProfileComplete } from "@/lib/counselor-guards";
 import EditProfileForm from "@/components/counselor/edit-profile-form";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -25,14 +26,7 @@ export default async function EditCounselorProfilePage() {
         );
     }
 
-    const isProfileComplete =
-        profile.isOnboarded &&
-        profile.professionalTitle &&
-        profile.bio &&
-        profile.experienceYears != null &&
-        profile.hourlyRate != null &&
-        profile.dateOfBirth;
-    if (!isProfileComplete) {
+    if (!isCounselorProfileComplete(profile)) {
         redirect("/dashboard/counselor/onboarding");
     }
 

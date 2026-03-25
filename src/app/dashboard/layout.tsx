@@ -12,11 +12,11 @@ export default async function DashboardLayout({
   const role = (session?.user?.role as string) || "PATIENT";
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       <AppNavbar role={role} />
-      {children}
+      <main className="flex w-full flex-1 flex-col">{children}</main>
       <DashboardFooter role={role} />
       <ChatWidget role={role} />
-    </>
+    </div>
   );
 }

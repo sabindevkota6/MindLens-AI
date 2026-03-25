@@ -52,14 +52,23 @@ interface SpecialtyOption {
 interface CounselorOnboardingFormProps {
   email: string;
   specialties: SpecialtyOption[];
+  /** Open directly on step 3 (e.g. returning from dashboard to upload verification). */
+  initialStep?: 1 | 2 | 3;
+  /** When true, only step 3 is shown (no steps 1–2 UI). */
+  verificationOnly?: boolean;
+  /** Step 3 copy when replacing an existing uploaded document. */
+  replaceExistingDocument?: boolean;
 }
 
 export default function CounselorOnboardingForm({
   email,
   specialties: availableSpecialties,
+  initialStep = 1,
+  verificationOnly = false,
+  replaceExistingDocument = false,
 }: CounselorOnboardingFormProps) {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<1 | 2 | 3>(initialStep);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{
     type: "success" | "error";
@@ -161,6 +170,8 @@ export default function CounselorOnboardingForm({
   return (
     <Form {...form}>
       <form onSubmit={handleFormSubmit} className="space-y-5">
+        {!verificationOnly && (
+          <>
         {/* step indicator */}
         <div className="flex items-center justify-center gap-2 mb-2">
           <Badge
@@ -476,6 +487,8 @@ export default function CounselorOnboardingForm({
             </Button>
           </div>
         </div>
+          </>
+        )}
 
         {/* step 3: verification document upload */}
         <div className={step === 3 ? "block space-y-5" : "hidden"}>
@@ -485,9 +498,15 @@ export default function CounselorOnboardingForm({
                 <ShieldCheck className="w-6 h-6 text-primary" />
               </div>
             </div>
-            <h3 className="text-base font-semibold text-gray-900">Upload Verification Document</h3>
+            <h3 className="text-base font-semibold text-gray-900">
+              {replaceExistingDocument
+                ? "Change verification document"
+                : "Upload Verification Document"}
+            </h3>
             <p className="text-sm text-gray-500">
-              Upload your professional license or certificate so the admin team can verify your account.
+              {replaceExistingDocument
+                ? "Upload a new license or certificate to replace your previous submission. It will be reviewed by the admin team."
+                : "Upload your professional license or certificate so the admin team can verify your account."}
             </p>
           </div>
 
@@ -502,25 +521,36 @@ export default function CounselorOnboardingForm({
             }}
           />
 
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={() => {
-              setMessage(null);
-              startTransition(async () => {
-                const res = await markCounselorOnboardingComplete();
-                if (res.error) {
-                  setMessage({ type: "error", text: res.error });
-                  return;
-                }
-                router.push("/dashboard/counselor");
-                router.refresh();
-              });
-            }}
-            className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors pt-1 disabled:opacity-50"
-          >
-            Skip for now
-          </button>
+          {!verificationOnly && (
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() => {
+                setMessage(null);
+                startTransition(async () => {
+                  const res = await markCounselorOnboardingComplete();
+                  if (res.error) {
+                    setMessage({ type: "error", text: res.error });
+                    return;
+                  }
+                  router.push("/dashboard/counselor");
+                  router.refresh();
+                });
+              }}
+              className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors pt-1 disabled:opacity-50"
+            >
+              Skip for now
+            </button>
+          )}
+          {verificationOnly && (
+            <button
+              type="button"
+              onClick={() => router.push("/dashboard/counselor")}
+              className="w-full text-sm text-gray-400 hover:text-gray-600 transition-colors pt-1"
+            >
+              Back to dashboard
+            </button>
+          )}
         </div>
       </form>
     </Form>

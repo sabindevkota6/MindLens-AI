@@ -1,6 +1,10 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getCounselorProfile } from "@/lib/actions/counselor";
+import {
+  counselorHasVerificationDocuments,
+  isCounselorProfileComplete,
+} from "@/lib/counselor-guards";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,11 +22,10 @@ import {
   FileText,
   ArrowLeft,
   ShieldCheck,
-  AlertTriangle,
   Upload,
 } from "lucide-react";
 import Link from "next/link";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CounselorVerificationAlerts } from "@/components/counselor/verification-scheduling-gate";
 import { DocumentUploadDialog } from "@/components/counselor/document-upload-dialog";
 
 export default async function CounselorProfilePage() {
@@ -42,14 +45,7 @@ export default async function CounselorProfilePage() {
     );
   }
 
-  const isProfileComplete =
-    profile.isOnboarded &&
-    profile.professionalTitle &&
-    profile.bio &&
-    profile.experienceYears != null &&
-    profile.hourlyRate != null &&
-    profile.dateOfBirth;
-  if (!isProfileComplete) {
+  if (!isCounselorProfileComplete(profile)) {
     redirect("/dashboard/counselor/onboarding");
   }
 
@@ -83,44 +79,12 @@ export default async function CounselorProfilePage() {
       ? "Rejected"
       : "Pending Verification";
 
+  const hasVerificationDoc = counselorHasVerificationDocuments(profile);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* pending verification alert */}
-      {profile.verificationStatus === "PENDING" && (
-        <div className="pt-20 px-4 md:px-8">
-          <div className="max-w-4xl mx-auto">
-            <Alert className="border-amber-200 bg-amber-50">
-              <Clock className="h-4 w-4 !text-amber-600" />
-              <AlertTitle className="text-amber-800 font-semibold">Account Under Review</AlertTitle>
-              <AlertDescription className="text-amber-700">
-                Your account is currently under review by administrators. You will be visible in the marketplace once approved.
-              </AlertDescription>
-            </Alert>
-          </div>
-        </div>
-      )}
-
-      {/* rejected verification alert */}
-      {profile.verificationStatus === "REJECTED" && (
-        <div className="pt-20 px-4 md:px-8">
-          <div className="max-w-4xl mx-auto">
-            <Alert className="border-red-200 bg-red-50">
-              <AlertTriangle className="h-4 w-4 !text-red-600" />
-              <AlertTitle className="text-red-800 font-semibold">Verification Rejected</AlertTitle>
-              <AlertDescription className="text-red-700">
-                Your documents were rejected. Please re-upload a valid professional license or certificate below.
-              </AlertDescription>
-            </Alert>
-          </div>
-        </div>
-      )}
-
       {/* green banner header */}
-      <div className={`bg-primary pb-10 px-4 md:px-8 ${
-        profile.verificationStatus === "PENDING" || profile.verificationStatus === "REJECTED"
-          ? "pt-4"
-          : "pt-20"
-      }`}>
+      <div className="bg-primary pt-20 pb-10 px-4 md:px-8">
         <div className="max-w-4xl mx-auto space-y-4">
           {/* Back link */}
           <Link
@@ -148,9 +112,21 @@ export default async function CounselorProfilePage() {
         </div>
       </div>
 
-      {/* Content area */}
+      {/* Content area — verification alerts sit here (same overlap slot as first card) */}
       <div className="px-4 md:px-8 -mt-4 pb-12">
         <div className="max-w-4xl mx-auto space-y-6">
+          {(profile.verificationStatus === "PENDING" ||
+            profile.verificationStatus === "REJECTED") && (
+            <CounselorVerificationAlerts
+              verificationStatus={profile.verificationStatus}
+              hasVerificationDoc={hasVerificationDoc}
+              pendingReviewBodyOverride="Your verification document has been received and is being reviewed by administrators. You will be visible in the marketplace once approved."
+              pendingNoDocumentBodyOverride="No verification document is on file yet. Upload your professional license or certificate so our team can review your account."
+              rejectedDescriptionOverride="Your documents were rejected. Please upload a valid professional license or certificate to try again."
+              className="space-y-4"
+            />
+          )}
+
           {/* ─── Personal Information Card ─── */}
           <Card className="shadow-sm border border-gray-100">
             <CardContent className="p-8">
@@ -357,17 +333,17 @@ export default async function CounselorProfilePage() {
                   No documents uploaded yet.
                 </p>
               )}
-              {profile.verificationStatus === "PENDING" && (
+              {profile.verificationStatus === "PENDING" && hasVerificationDoc && (
                 <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                   <p className="text-sm text-amber-700">
-                    Note: Your profile will not be visible to users/patients until you are verified.
+                    Note: Your profile will not be visible to users/patients until your submitted document is approved.
                   </p>
                 </div>
               )}
-              {profile.verificationStatus === "REJECTED" && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
-                  <p className="text-sm text-red-700">
-                    Your verification was rejected. You can change the verification document and try again.
+              {profile.verificationStatus === "VERIFIED" && hasVerificationDoc && (
+                <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+                  <p className="text-sm text-gray-600 flex-1 min-w-[200px]">
+                    Need to update your license or certificate on file?
                   </p>
                   <DocumentUploadDialog />
                 </div>
