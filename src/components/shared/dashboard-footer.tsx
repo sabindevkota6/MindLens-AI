@@ -45,8 +45,27 @@ const counselorLinks = {
   },
 };
 
+const adminLinks = {
+  quickLinks: [
+    { href: "/dashboard/admin/verification", label: "Pending Verification" },
+  ],
+  col3: {
+    title: "Admin",
+    links: [{ href: "/dashboard/admin/verification", label: "Review queue" }],
+  },
+  col4: {
+    title: "Site",
+    links: [{ href: "/", label: "Homepage" }],
+  },
+};
+
 export function DashboardFooter({ role }: { role: string }) {
-  const config = role === "COUNSELOR" ? counselorLinks : patientLinks;
+  const config =
+    role === "COUNSELOR"
+      ? counselorLinks
+      : role === "ADMIN"
+        ? adminLinks
+        : patientLinks;
 
   return (
     <footer className="shrink-0 bg-primary text-white py-12 px-6 lg:px-8">

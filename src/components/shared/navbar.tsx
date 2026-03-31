@@ -85,11 +85,10 @@ export function AppNavbar({ role }: { role: string }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors pb-1 ${
-                    active
+                  className={`relative text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors pb-1 ${active
                       ? "after:absolute after:bottom-0 after:left-0 after:w-full after:h-[3px] after:bg-primary after:rounded-full"
                       : ""
-                  }`}
+                    }`}
                 >
                   {link.label}
                 </Link>
@@ -103,11 +102,10 @@ export function AppNavbar({ role }: { role: string }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`relative rounded-full hover:bg-gray-100 ${
-                  mounted && isProfile
+                className={`relative rounded-full hover:bg-gray-100 ${mounted && isProfile
                     ? "after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-5 after:h-[3px] after:bg-primary after:rounded-full"
                     : ""
-                }`}
+                  }`}
               >
                 <UserCircle className="!w-6 !h-6 text-gray-700" />
               </Button>

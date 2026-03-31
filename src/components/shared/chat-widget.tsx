@@ -67,6 +67,11 @@ const counselorSuggestions = [
   "How do I edit my profile?",
 ];
 
+const adminSuggestions = [
+  "What does pending verification mean?",
+  "How do I approve a counselor?",
+];
+
 // the chat widget is a floating bubble in the bottom-right corner of the dashboard.
 // sendMessage() is the core api for sending user messages now
 export function ChatWidget({ role = "PATIENT" }: { role?: string }) {
@@ -80,7 +85,12 @@ export function ChatWidget({ role = "PATIENT" }: { role?: string }) {
   // stable id keeps conversation alive across page navigations
   const { messages, sendMessage, status, error } = useChat({ id: "mindlens-assistant" });
 
-  const suggestions = role === "COUNSELOR" ? counselorSuggestions : patientSuggestions;
+  const suggestions =
+    role === "COUNSELOR"
+      ? counselorSuggestions
+      : role === "ADMIN"
+        ? adminSuggestions
+        : patientSuggestions;
 
   const isLoading = status === "submitted" || status === "streaming";
 
