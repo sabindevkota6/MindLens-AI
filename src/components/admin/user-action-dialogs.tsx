@@ -132,7 +132,8 @@ export function UnbanUserDialog({ userId, userName }: { userId: string; userName
             Unban {userName}
           </DialogTitle>
           <DialogDescription>
-            This will restore full access to {userName}'s account. They will be able to use all platform features again.
+            This will restore full access to {userName}'s account. They will be able to use all platform features again. They
+            will receive an email notification.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 pt-2">
@@ -297,7 +298,8 @@ export function UnsuspendUserDialog({ userId, userName }: { userId: string; user
             Unsuspend {userName}
           </DialogTitle>
           <DialogDescription>
-            This will immediately restore {userName}'s full access before the suspension period ends.
+            This will immediately restore {userName}'s full access before the suspension period ends. They will receive an
+            email notification.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 pt-2">

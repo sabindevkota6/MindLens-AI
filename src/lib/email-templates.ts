@@ -582,3 +582,141 @@ export function counselorBannedEmail({ counselorName, reason }: { counselorName:
 </html>
   `.trim();
 }
+
+// notify patient their ban was lifted (manual unban by admin)
+export function patientUnbannedEmail({
+  patientName,
+  dashboardUrl,
+}: {
+  patientName: string;
+  dashboardUrl: string;
+}): string {
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#00796B;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Account Reinstated</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${patientName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Your permanent ban has been <strong>lifted</strong> by an administrator. Full access to MindLens AI has been restored.</p>
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:16px;margin-bottom:24px">
+        <p style="color:#0f766e;font-size:14px;line-height:1.5;margin:0">You can use all patient features again, including booking and appointments.</p>
+      </div>
+      <div style="text-align:center;margin-bottom:24px">
+        <a href="${dashboardUrl}" style="display:inline-block;background-color:#00796B;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600">Open your dashboard</a>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// notify counselor their ban was lifted (manual unban by admin)
+export function counselorUnbannedEmail({
+  counselorName,
+  dashboardUrl,
+}: {
+  counselorName: string;
+  dashboardUrl: string;
+}): string {
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#00796B;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Account Reinstated</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${counselorName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Your permanent ban has been <strong>lifted</strong> by an administrator. Your counselor account and marketplace visibility are restored.</p>
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:16px;margin-bottom:24px">
+        <p style="color:#0f766e;font-size:14px;line-height:1.5;margin:0">You can use all counselor features again, including availability and patient bookings.</p>
+      </div>
+      <div style="text-align:center;margin-bottom:24px">
+        <a href="${dashboardUrl}" style="display:inline-block;background-color:#00796B;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600">Open your dashboard</a>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// notify patient their suspension ended (manual unsuspend by admin, or automatic when period expires)
+export function patientUnsuspendedEmail({
+  patientName,
+  dashboardUrl,
+  automatic,
+}: {
+  patientName: string;
+  dashboardUrl: string;
+  automatic: boolean;
+}): string {
+  const mainParagraph = automatic
+    ? "Your suspension period has <strong>ended</strong>. Full access to MindLens AI has been restored automatically."
+    : "An administrator has <strong>lifted your suspension</strong>. Full access to MindLens AI has been restored.";
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#00796B;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Suspension Lifted</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${patientName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">${mainParagraph}</p>
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:16px;margin-bottom:24px">
+        <p style="color:#0f766e;font-size:14px;line-height:1.5;margin:0">You can use all patient features again, including booking and appointments.</p>
+      </div>
+      <div style="text-align:center;margin-bottom:24px">
+        <a href="${dashboardUrl}" style="display:inline-block;background-color:#00796B;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600">Open your dashboard</a>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// notify counselor their suspension ended (manual unsuspend by admin, or automatic when period expires)
+export function counselorUnsuspendedEmail({
+  counselorName,
+  dashboardUrl,
+  automatic,
+}: {
+  counselorName: string;
+  dashboardUrl: string;
+  automatic: boolean;
+}): string {
+  const mainParagraph = automatic
+    ? "Your suspension period has <strong>ended</strong>. Your counselor account and marketplace access have been restored automatically."
+    : "An administrator has <strong>lifted your suspension</strong>. Your counselor account and marketplace visibility are restored.";
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#00796B;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Suspension Lifted</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${counselorName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">${mainParagraph}</p>
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:16px;margin-bottom:24px">
+        <p style="color:#0f766e;font-size:14px;line-height:1.5;margin:0">You can use all counselor features again, including availability and patient bookings.</p>
+      </div>
+      <div style="text-align:center;margin-bottom:24px">
+        <a href="${dashboardUrl}" style="display:inline-block;background-color:#00796B;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:15px;font-weight:600">Open your dashboard</a>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}

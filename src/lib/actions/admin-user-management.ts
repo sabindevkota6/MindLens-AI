@@ -13,6 +13,10 @@ import {
   patientBannedEmail,
   counselorSuspendedEmail,
   counselorBannedEmail,
+  patientUnbannedEmail,
+  counselorUnbannedEmail,
+  patientUnsuspendedEmail,
+  counselorUnsuspendedEmail,
 } from "@/lib/email-templates";
 
 const s3 = new S3Client({
@@ -46,6 +50,14 @@ function keyFromUrl(url: string): string | null {
 
 function appBase() {
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+}
+
+// dashboard link for reinstatement emails (patient / counselor / admin)
+function dashboardUrlForRole(role: string): string {
+  const base = appBase();
+  if (role === "PATIENT") return `${base}/dashboard/patient`;
+  if (role === "COUNSELOR") return `${base}/dashboard/counselor`;
+  return `${base}/dashboard/admin`;
 }
 
 // revalidate all paths that might show user status
@@ -682,7 +694,13 @@ export async function adminUnbanUser(
   const session = await assertAdmin();
   if (!session) return { error: "Unauthorized" };
 
-  const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+  const user = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    include: {
+      patientProfile: { select: { fullName: true } },
+      counselorProfile: { select: { fullName: true } },
+    },
+  });
   if (!user) return { error: "User not found" };
   if (!user.isBanned) return { error: "User is not currently banned" };
 
@@ -699,6 +717,19 @@ export async function adminUnbanUser(
       metadata: { manual: true },
     },
   });
+
+  const name = user.patientProfile?.fullName ?? user.counselorProfile?.fullName ?? "User";
+  const dashboardUrl = dashboardUrlForRole(user.role);
+  const emailHtml =
+    user.role === "PATIENT"
+      ? patientUnbannedEmail({ patientName: name, dashboardUrl })
+      : counselorUnbannedEmail({ counselorName: name, dashboardUrl });
+
+  sendEmail({
+    to: user.email,
+    subject: "Your MindLens AI account has been reinstated",
+    html: emailHtml,
+  }).catch(console.error);
 
   revalidateUserPaths(targetUserId);
   return { success: true };
@@ -775,7 +806,13 @@ export async function adminUnsuspendUser(
   const session = await assertAdmin();
   if (!session) return { error: "Unauthorized" };
 
-  const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+  const user = await prisma.user.findUnique({
+    where: { id: targetUserId },
+    include: {
+      patientProfile: { select: { fullName: true } },
+      counselorProfile: { select: { fullName: true } },
+    },
+  });
   if (!user) return { error: "User not found" };
   if (!user.isSuspended) return { error: "User is not currently suspended" };
 
@@ -792,6 +829,19 @@ export async function adminUnsuspendUser(
       metadata: { manual: true },
     },
   });
+
+  const name = user.patientProfile?.fullName ?? user.counselorProfile?.fullName ?? "User";
+  const dashboardUrl = dashboardUrlForRole(user.role);
+  const emailHtml =
+    user.role === "PATIENT"
+      ? patientUnsuspendedEmail({ patientName: name, dashboardUrl, automatic: false })
+      : counselorUnsuspendedEmail({ counselorName: name, dashboardUrl, automatic: false });
+
+  sendEmail({
+    to: user.email,
+    subject: "Your MindLens AI suspension has been lifted",
+    html: emailHtml,
+  }).catch(console.error);
 
   revalidateUserPaths(targetUserId);
   return { success: true };

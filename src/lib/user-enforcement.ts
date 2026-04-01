@@ -12,6 +12,8 @@ import {
   counselorBanWarningEmail,
   counselorSuspendedEmail,
   counselorBannedEmail,
+  patientUnsuspendedEmail,
+  counselorUnsuspendedEmail,
 } from "@/lib/email-templates";
 
 // thresholds for patient report-based enforcement
@@ -248,6 +250,13 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
   }
 }
 
+function dashboardUrlForRole(role: string): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  if (role === "PATIENT") return `${base}/dashboard/patient`;
+  if (role === "COUNSELOR") return `${base}/dashboard/counselor`;
+  return `${base}/dashboard/admin`;
+}
+
 // checks if a suspended user's suspension has expired and lazily lifts it
 // returns the resolved status { isBanned, isSuspended, suspendedUntil }
 export async function resolveUserAccountStatus(userId: string) {
@@ -258,12 +267,36 @@ export async function resolveUserAccountStatus(userId: string) {
 
   if (!user) return null;
 
-  // lift expired suspension lazily on access
+  // lift expired suspension lazily on access — same email pattern as manual unsuspend, with automatic: true
   if (user.isSuspended && user.suspendedUntil && user.suspendedUntil < new Date()) {
+    const withProfiles = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        patientProfile: { select: { fullName: true } },
+        counselorProfile: { select: { fullName: true } },
+      },
+    });
+    if (!withProfiles) return null;
+
     await prisma.user.update({
       where: { id: userId },
       data: { isSuspended: false, suspendedUntil: null, suspendedAt: null, suspendReason: null },
     });
+
+    const name =
+      withProfiles.patientProfile?.fullName ?? withProfiles.counselorProfile?.fullName ?? "User";
+    const dashboardUrl = dashboardUrlForRole(withProfiles.role);
+    const emailHtml =
+      withProfiles.role === "PATIENT"
+        ? patientUnsuspendedEmail({ patientName: name, dashboardUrl, automatic: true })
+        : counselorUnsuspendedEmail({ counselorName: name, dashboardUrl, automatic: true });
+
+    sendEmail({
+      to: withProfiles.email,
+      subject: "Your MindLens AI account access has been restored",
+      html: emailHtml,
+    }).catch(console.error);
+
     return { isBanned: user.isBanned, isSuspended: false, suspendedUntil: null, banReason: user.banReason, suspendReason: null };
   }
 
