@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { getPatientProfile } from "@/lib/actions/patient";
 import EditPatientProfileForm from "@/components/patient/edit-profile-form";
+import { AccountRestrictionAlert } from "@/components/shared/account-access-gate";
+import { resolveUserAccountStatus } from "@/lib/user-enforcement";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -12,7 +14,10 @@ export default async function EditPatientProfilePage() {
     redirect("/login");
   }
 
-  const profile = await getPatientProfile();
+  const [profile, accountStatus] = await Promise.all([
+    getPatientProfile(),
+    resolveUserAccountStatus(session.user.id),
+  ]);
 
   if (!profile) {
     return (
@@ -47,7 +52,15 @@ export default async function EditPatientProfilePage() {
       </div>
 
       <div className="px-4 md:px-8 -mt-4 pb-12">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {accountStatus && (accountStatus.isBanned || accountStatus.isSuspended) && (
+            <AccountRestrictionAlert
+              isBanned={accountStatus.isBanned}
+              suspendedUntil={
+                accountStatus.suspendedUntil ? accountStatus.suspendedUntil.toISOString() : null
+              }
+            />
+          )}
           <EditPatientProfileForm
             initialData={profile}
             email={profile.user.email}

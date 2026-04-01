@@ -15,6 +15,8 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
+import { AccountRestrictionAlert } from "@/components/shared/account-access-gate";
+import { resolveUserAccountStatus } from "@/lib/user-enforcement";
 
 export default async function PatientProfilePage() {
   const session = await auth();
@@ -23,7 +25,10 @@ export default async function PatientProfilePage() {
     redirect("/login");
   }
 
-  const profile = await getPatientProfile();
+  const [profile, accountStatus] = await Promise.all([
+    getPatientProfile(),
+    resolveUserAccountStatus(session.user.id),
+  ]);
 
   if (!profile) {
     return (
@@ -80,6 +85,14 @@ export default async function PatientProfilePage() {
 
       <div className="px-4 md:px-8 -mt-4 pb-12">
         <div className="max-w-4xl mx-auto space-y-6">
+          {accountStatus && (accountStatus.isBanned || accountStatus.isSuspended) && (
+            <AccountRestrictionAlert
+              isBanned={accountStatus.isBanned}
+              suspendedUntil={
+                accountStatus.suspendedUntil ? accountStatus.suspendedUntil.toISOString() : null
+              }
+            />
+          )}
           <Card className="shadow-sm border border-gray-100">
             <CardContent className="p-8">
               <h2 className="text-lg font-semibold text-primary mb-6">

@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getCounselorProfile, getAllSpecialties } from "@/lib/actions/counselor";
 import { isCounselorProfileComplete } from "@/lib/counselor-guards";
 import EditProfileForm from "@/components/counselor/edit-profile-form";
+import { AccountRestrictionAlert } from "@/components/shared/account-access-gate";
+import { resolveUserAccountStatus } from "@/lib/user-enforcement";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -13,9 +15,10 @@ export default async function EditCounselorProfilePage() {
         redirect("/login");
     }
 
-    const [profile, specialties] = await Promise.all([
+    const [profile, specialties, accountStatus] = await Promise.all([
         getCounselorProfile(),
-        getAllSpecialties()
+        getAllSpecialties(),
+        resolveUserAccountStatus(session.user.id),
     ]);
 
     if (!profile) {
@@ -52,7 +55,17 @@ export default async function EditCounselorProfilePage() {
 
             {/* Content area */}
             <div className="px-4 md:px-8 -mt-4 pb-12">
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-4xl mx-auto space-y-6">
+                    {accountStatus && (accountStatus.isBanned || accountStatus.isSuspended) && (
+                        <AccountRestrictionAlert
+                            isBanned={accountStatus.isBanned}
+                            suspendedUntil={
+                                accountStatus.suspendedUntil
+                                    ? accountStatus.suspendedUntil.toISOString()
+                                    : null
+                            }
+                        />
+                    )}
                     <EditProfileForm
                         initialData={profile}
                         specialties={specialties}
