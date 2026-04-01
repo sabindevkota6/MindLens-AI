@@ -756,19 +756,25 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
               <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0" />
             </Link>
 
-            {/* reports center — coming soon */}
-            <div className="flex items-center gap-4 p-3.5 rounded-xl bg-gray-50 opacity-50 cursor-not-allowed pointer-events-none">
-              <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-4 h-4 text-gray-400" />
+            {/* reports center — active link */}
+            <Link
+              href="/dashboard/admin/reports"
+              className="flex items-center gap-4 p-3.5 rounded-xl bg-gray-50 hover:bg-primary/5 transition-colors group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors flex-shrink-0">
+                <AlertTriangle className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-500">Reports Center</p>
-                <p className="text-xs text-gray-400">View and manage filed reports</p>
+                <p className="text-sm font-medium text-gray-900">Reports Center</p>
+                <p className="text-xs text-gray-500">View and manage filed reports</p>
               </div>
-              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
-                Soon
-              </span>
-            </div>
+              {data.totalReportsThisWeek > 0 && (
+                <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full flex-shrink-0">
+                  {data.totalReportsThisWeek}
+                </span>
+              )}
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0" />
+            </Link>
 
             {/* platform settings — coming soon */}
             <div className="flex items-center gap-4 p-3.5 rounded-xl bg-gray-50 opacity-50 cursor-not-allowed pointer-events-none">

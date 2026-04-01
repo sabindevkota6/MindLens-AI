@@ -28,6 +28,7 @@ export function AdminNavbar() {
 
   const dashboardActive = pathname.startsWith("/dashboard/admin/statistics");
   const verificationActive = pathname.startsWith("/dashboard/admin/verification");
+  const reportsActive = pathname.startsWith("/dashboard/admin/reports");
   const usersActive = pathname.startsWith("/dashboard/admin/users");
 
   return (
@@ -57,6 +58,10 @@ export function AdminNavbar() {
 
             <NavLink href="/dashboard/admin/verification" active={verificationActive}>
               Pending Verification
+            </NavLink>
+
+            <NavLink href="/dashboard/admin/reports" active={reportsActive}>
+              Reports Center
             </NavLink>
 
             <NavLink href="/dashboard/admin/users/counselors" active={usersActive}>
