@@ -61,7 +61,7 @@ export default async function AdminVerificationQueuePage() {
               </CardContent>
             </Card>
           ) : (
-            <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-2">
+            <ul className="grid auto-rows-[1fr] gap-5 sm:grid-cols-2 xl:grid-cols-2">
               {data.map((c, i) => {
                 const statusLabel = c.hasDocuments
                   ? "Awaiting review"
@@ -74,12 +74,12 @@ export default async function AdminVerificationQueuePage() {
                   <li
                     key={c.id}
                     className={cn(
-                      "group animate-in fade-in slide-in-from-bottom-2 fill-mode-forwards"
+                      "group flex h-full min-h-0 animate-in fade-in slide-in-from-bottom-2 fill-mode-forwards"
                     )}
                     style={{ animationDelay: `${i * 45}ms` }}
                   >
-                    <Card className="border-gray-100 shadow-sm transition hover:shadow-md hover:border-gray-200">
-                      <CardContent className="pt-6">
+                    <Card className="h-full min-h-0 w-full border-gray-100 shadow-sm transition hover:shadow-md hover:border-gray-200">
+                      <CardContent className="flex flex-1 flex-col pt-6">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <h2 className="text-lg font-semibold text-gray-900 truncate">
@@ -140,7 +140,7 @@ export default async function AdminVerificationQueuePage() {
 
                         <Link
                           href={`/dashboard/admin/verification/${c.id}`}
-                          className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary transition group-hover:gap-3"
+                          className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-semibold text-primary transition group-hover:gap-3"
                         >
                           View details
                           <ArrowRight className="h-4 w-4" />

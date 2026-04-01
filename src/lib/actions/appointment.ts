@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
 import { cancellationEmail, appointmentAdjustedEmail } from "@/lib/email-templates";
+import { checkPatientReportEnforcement, checkCounselorRatingEnforcement } from "@/lib/user-enforcement";
 import { format } from "date-fns";
 
 // ─── Constants ───
@@ -528,7 +529,7 @@ export const adjustAppointmentTime = async (appointmentId: string, newSlotId: st
     return { success: "Appointment time adjusted successfully" };
 };
 
-// ─── Submit review (patient only, completed appointments) ───
+//submit review (patient only, completed appointments)
 export const submitReview = async (appointmentId: string, rating: number, comment: string) => {
     const session = await auth();
     if (!session?.user || session.user.role !== "PATIENT") {
@@ -557,6 +558,11 @@ export const submitReview = async (appointmentId: string, rating: number, commen
             comment: comment.trim() || null,
         },
     });
+
+    // check 1-star thresholds for the counselor and apply enforcement if needed
+    if (rating === 1) {
+        checkCounselorRatingEnforcement(appointment.counselorProfileId).catch(console.error);
+    }
 
     revalidatePath("/dashboard/patient/appointments");
     return { success: "Review submitted successfully" };
@@ -603,6 +609,9 @@ export const reportPatient = async (appointmentId: string, reason: string) => {
             reason: reason.trim(),
         },
     });
+
+    // check report count thresholds and apply auto-suspend/ban if needed
+    checkPatientReportEnforcement(appointment.patient.id).catch(console.error);
 
     revalidatePath("/dashboard/counselor/appointments");
     return { success: "Report submitted successfully" };

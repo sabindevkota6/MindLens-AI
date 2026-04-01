@@ -166,15 +166,9 @@ export async function getAdminVerificationDocumentDownloadUrl(
 
   const doc = await prisma.verificationDocument.findUnique({
     where: { id: documentId },
-    include: {
-      counselor: { select: { verificationStatus: true } },
-    },
   });
 
   if (!doc) return { error: "Document not found" };
-  if (doc.counselor.verificationStatus !== "PENDING") {
-    return { error: "Not available" };
-  }
 
   const key = keyFromDocumentUrl(doc.documentUrl);
   if (!key) return { error: "Invalid file location" };

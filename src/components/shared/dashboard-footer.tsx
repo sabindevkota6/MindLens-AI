@@ -50,12 +50,12 @@ const adminLinks = {
     { href: "/dashboard/admin/verification", label: "Pending Verification" },
   ],
   col3: {
-    title: "Admin",
-    links: [{ href: "/dashboard/admin/verification", label: "Review queue" }],
+    title: "Management",
+    links: [{ href: "/dashboard/admin/users", label: "User Management" }],
   },
   col4: {
-    title: "Site",
-    links: [{ href: "/", label: "Homepage" }],
+    title: "Dashboard",
+    links: [{ href: "/dashboard/admin/statistics", label: "Statistics" }],
   },
 };
 

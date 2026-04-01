@@ -27,6 +27,15 @@ enum AppointmentStatus {
   MISSED
 }
 
+enum AdminAction {
+  BAN
+  UNBAN
+  SUSPEND
+  UNSUSPEND
+  VERIFY_COUNSELOR
+  REVOKE_VERIFICATION
+}
+
 // user model
 model User {
   id            String    @id @default(cuid())
@@ -38,10 +47,22 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // soft ban/suspend fields — admin actions use these, never hard-delete
+  isSuspended     Boolean   @default(false)
+  suspendedUntil  DateTime?
+  isBanned        Boolean   @default(false)
+  suspendedAt     DateTime?
+  bannedAt        DateTime?
+  banReason       String?
+  suspendReason   String?
+
   // relations
   patientProfile   PatientProfile?
   counselorProfile CounselorProfile?
   adminProfile     AdminProfile?
+
+  adminActionsPerformed AdminActionLog[] @relation("AdminPerformer")
+  adminActionsReceived  AdminActionLog[] @relation("AdminTarget")
 }
 
 // profiles
@@ -201,6 +222,23 @@ model EmotionLog {
   humeAnalysisJson Json
   dominantEmotion  String
   recordedAt       DateTime       @default(now())
-  
+
   patient          PatientProfile @relation(fields: [patientProfileId], references: [id], onDelete: Cascade)
+}
+
+// tracks every admin action for audit trail
+model AdminActionLog {
+  id           String      @id @default(cuid())
+  adminUserId  String
+  targetUserId String
+  action       AdminAction
+  reason       String?
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+
+  admin        User @relation("AdminPerformer", fields: [adminUserId], references: [id], onDelete: Cascade)
+  targetUser   User @relation("AdminTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([targetUserId])
+  @@index([adminUserId])
 }

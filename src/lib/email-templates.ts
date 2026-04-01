@@ -355,3 +355,230 @@ export function appointmentAdjustedEmail({
 </html>
   `.trim();
 }
+
+
+// warn patient approaching suspension (7 reports)
+export function patientSuspendWarningEmail({ patientName }: { patientName: string }): string {
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#d97706;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Account Warning</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px">Hi <strong>${patientName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px">Your account has received multiple conduct reports from counselors. If this continues, your account will be <strong>automatically suspended</strong>.</p>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px;margin-bottom:24px">
+        <p style="color:#92400e;font-size:14px;line-height:1.5;margin:0"><strong>Action required:</strong> Please review MindLens AI community guidelines. Continued violations will result in a 5-day suspension.</p>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// warn patient approaching ban (15 reports)
+export function patientBanWarningEmail({ patientName }: { patientName: string }): string {
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#dc2626;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Final Warning — Ban Risk</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px">Hi <strong>${patientName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 16px">Your account is at high risk of a <strong>permanent ban</strong> due to continued conduct violations.</p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px">
+        <p style="color:#991b1b;font-size:14px;line-height:1.5;margin:0"><strong>This is your final warning.</strong> Any further violations will result in a permanent ban from MindLens AI.</p>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// notify patient they have been suspended
+export function patientSuspendedEmail({ patientName, days, suspendedUntil, reason }: { patientName: string; days: number; suspendedUntil: string; reason?: string; }): string {
+  const reasonRow = reason
+    ? `
+        <tr>
+          <td style="color:#6b7280;font-size:14px;padding:4px 0">Reason</td>
+          <td style="color:#111827;font-size:14px;padding:4px 0;text-align:right">${reason}</td>
+        </tr>`
+    : "";
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#d97706;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Account Suspended</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${patientName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Your account has been suspended for <strong>${days} day${days !== 1 ? "s" : ""}</strong>.</p>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px;margin-bottom:16px">
+        <table style="width:100%;border-collapse:collapse">
+          <tr>
+            <td style="color:#6b7280;font-size:14px;padding:4px 0">Duration</td>
+            <td style="color:#92400e;font-size:14px;font-weight:600;padding:4px 0;text-align:right">${days} day${days !== 1 ? "s" : ""}</td>
+          </tr>
+          <tr>
+            <td style="color:#6b7280;font-size:14px;padding:4px 0">Restored on</td>
+            <td style="color:#111827;font-size:14px;font-weight:500;padding:4px 0;text-align:right">${suspendedUntil}</td>
+          </tr>${reasonRow}
+        </table>
+      </div>
+      <p style="color:#6b7280;font-size:13px;margin:0 0 24px">You can still log in and view your profile. All other features are unavailable until the suspension ends.</p>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// notify patient they have been permanently banned
+export function patientBannedEmail({ patientName, reason }: { patientName: string; reason?: string; }): string {
+  const reasonText = reason
+    ? `<strong>Reason:</strong> ${reason}`
+    : "Your account accumulated an excessive number of conduct reports, violating our community standards.";
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#dc2626;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Account Banned</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${patientName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Your account has been permanently banned from MindLens AI due to repeated violations of our terms and conditions.</p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:16px">
+        <p style="color:#991b1b;font-size:14px;line-height:1.5;margin:0">${reasonText}</p>
+      </div>
+      <p style="color:#6b7280;font-size:13px;margin:0 0 24px">You may still log in to view your profile, but all platform features are permanently inaccessible.</p>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// warn counselor approaching suspension (7 one-star reviews)
+export function counselorSuspendWarningEmail({ counselorName }: { counselorName: string }): string {
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#d97706;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Quality Warning</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${counselorName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Your profile has received a significant number of 1-star reviews. If this continues, your account will be <strong>automatically suspended</strong>.</p>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px;margin-bottom:24px">
+        <p style="color:#92400e;font-size:14px;line-height:1.5;margin:0">Please review patient feedback and improve session quality. Continued low ratings will result in a 5-day suspension.</p>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// warn counselor approaching ban (15 one-star reviews)
+export function counselorBanWarningEmail({ counselorName }: { counselorName: string }): string {
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#dc2626;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Final Warning — Ban Risk</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${counselorName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Your account has accumulated a critically high number of 1-star reviews. You are at serious risk of a <strong>permanent ban</strong>.</p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:24px">
+        <p style="color:#991b1b;font-size:14px;line-height:1.5;margin:0"><strong>Final warning.</strong> Additional 1-star reviews will result in a permanent ban and revocation of marketplace visibility.</p>
+      </div>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// notify counselor they have been suspended
+export function counselorSuspendedEmail({ counselorName, days, suspendedUntil, reason }: { counselorName: string; days: number; suspendedUntil: string; reason?: string; }): string {
+  const reasonRow = reason
+    ? `
+        <tr>
+          <td style="color:#6b7280;font-size:14px;padding:4px 0">Reason</td>
+          <td style="color:#111827;font-size:14px;padding:4px 0;text-align:right">${reason}</td>
+        </tr>`
+    : "";
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#d97706;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Account Suspended</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${counselorName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Your counselor account has been suspended for <strong>${days} day${days !== 1 ? "s" : ""}</strong>. You will not be visible to patients during this period.</p>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:16px;margin-bottom:16px">
+        <table style="width:100%;border-collapse:collapse">
+          <tr>
+            <td style="color:#6b7280;font-size:14px;padding:4px 0">Duration</td>
+            <td style="color:#92400e;font-size:14px;font-weight:600;padding:4px 0;text-align:right">${days} day${days !== 1 ? "s" : ""}</td>
+          </tr>
+          <tr>
+            <td style="color:#6b7280;font-size:14px;padding:4px 0">Restored on</td>
+            <td style="color:#111827;font-size:14px;font-weight:500;padding:4px 0;text-align:right">${suspendedUntil}</td>
+          </tr>${reasonRow}
+        </table>
+      </div>
+      <p style="color:#6b7280;font-size:13px;margin:0 0 24px">You can still log in and view your profile. Marketplace visibility and scheduling tools restore automatically when the suspension ends.</p>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}
+
+// notify counselor they have been permanently banned
+export function counselorBannedEmail({ counselorName, reason }: { counselorName: string; reason?: string; }): string {
+  const reasonText = reason
+    ? `<strong>Reason:</strong> ${reason}`
+    : "Your account accumulated an excessive number of 1-star ratings, violating our platform standards.";
+  return `
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;margin:0;padding:0">
+  <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+    <div style="background:#dc2626;padding:32px 24px;text-align:center">
+      <h1 style="color:#fff;font-size:22px;margin:0">Account Banned</h1>
+    </div>
+    <div style="padding:32px 24px">
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Hi <strong>${counselorName}</strong>,</p>
+      <p style="color:#374151;font-size:15px;margin:0 0 16px">Your counselor account has been permanently banned and your visibility revoked from MindLens AI.</p>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;margin-bottom:16px">
+        <p style="color:#991b1b;font-size:14px;line-height:1.5;margin:0">${reasonText}</p>
+      </div>
+      <p style="color:#6b7280;font-size:13px;margin:0 0 24px">You may still log in to view your profile, but all counselor features and marketplace visibility have been permanently removed.</p>
+      <p style="color:#9ca3af;font-size:13px;text-align:center;margin:0">This is an automated email from MindLens AI. Please do not reply.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}

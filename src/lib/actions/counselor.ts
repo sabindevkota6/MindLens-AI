@@ -285,6 +285,8 @@ export const searchCounselors = async (
     const where: any = {
         verificationStatus: "VERIFIED",
         isOnboarded: true,
+        // exclude banned and suspended counselors from patient-facing search
+        user: { isBanned: false, isSuspended: false },
     };
 
     if (query && query.trim()) {
@@ -416,7 +418,7 @@ export const searchCounselors = async (
     };
 };
 
-// ─── Public Counselor Detail (for patients viewing a counselor) ───
+// Public Counselor Detail (for patients viewing a counselor)
 
 export interface CounselorDetail {
     id: string;
@@ -494,7 +496,7 @@ export const getCounselorDetail = async (counselorId: string): Promise<Counselor
     };
 };
 
-// ─── Get Available Slots for a Counselor ───
+// Get Available Slots for a Counselor
 
 export interface AvailableSlot {
     id: string;
@@ -542,7 +544,7 @@ export const getCounselorAvailableSlots = async (
         }));
 };
 
-// ─── Get dates that have available slots (for calendar highlighting) ───
+// Get dates that have available slots (for calendar highlighting)
 
 export const getCounselorAvailableDates = async (
     counselorId: string,
@@ -558,7 +560,7 @@ export const getCounselorAvailableDates = async (
     const now = new Date();
     const rangeStart = startOfMonth > now ? startOfMonth : now;
 
-    // Fetch active schedule days — same zombie-slot guard as getCounselorAvailableSlots.
+    // Fetch active schedule days
     const activeSchedule = await prisma.recurringSchedule.findMany({
         where: { counselorProfileId: counselorId },
         select: { dayOfWeek: true },
@@ -738,7 +740,7 @@ export const bookAppointment = async (slotId: string) => {
     }
 };
 
-// ─── Recurring Schedule Management ───
+// Recurring Schedule Management
 
 export const getRecurringSchedule = async (userId?: string) => {
     let uid = userId;
@@ -766,7 +768,7 @@ export const getRecurringSchedule = async (userId?: string) => {
     }));
 };
 
-// ─── Save Recurring Schedule & Generate Slots ───
+// Save Recurring Schedule & Generate Slots
 
 const SLOT_DURATION_MINUTES = 60;
 const GENERATION_WEEKS = 4;
@@ -1022,7 +1024,7 @@ export const saveRecurringSchedule = async (values: {
     }
 };
 
-// ─── Get global slot statistics (all future slots, not just current week) ───
+// Get global slot statistics (all future slots, not just current week)
 
 export interface SlotStats {
     total: number;
@@ -1067,7 +1069,7 @@ export const getSlotStats = async (userId?: string): Promise<SlotStats> => {
     };
 };
 
-// ─── Get Availability Slots for Management (Counselor View) ───
+// Get Availability Slots for Management (Counselor View)
 
 export interface ManagedSlot {
     id: string;
@@ -1133,7 +1135,7 @@ export const getAvailabilitySlots = async (
         }));
 };
 
-// ─── Toggle Slot Block/Unblock ───
+// Toggle Slot Block/Unblock
 
 export const toggleSlotBlock = async (slotId: string) => {
     const session = await auth();
