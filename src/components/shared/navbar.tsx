@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getNavLinksForRole } from "@/lib/chat-navigation";
 import { LogOut, UserCircle } from "lucide-react";
 
@@ -16,6 +17,17 @@ export function AppNavbar({ role }: { role: string }) {
 
   const isCounselor = role === "COUNSELOR";
   const navLinks = getNavLinksForRole(role);
+
+  const { data: sessionData } = useSession();
+  const userImage = sessionData?.user?.image;
+  const userName = sessionData?.user?.name ?? "";
+  const navInitials = userName
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 
   useEffect(() => setMounted(true), []);
 
@@ -107,7 +119,16 @@ export function AppNavbar({ role }: { role: string }) {
                     : ""
                   }`}
               >
-                <UserCircle className="!w-6 !h-6 text-gray-700" />
+                {userImage ? (
+                  <Avatar className="w-7 h-7 ring-2 ring-primary/20 transition-transform hover:scale-105">
+                    <AvatarImage src={userImage} alt="Profile" />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                      {navInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <UserCircle className="!w-6 !h-6 text-gray-700" />
+                )}
               </Button>
             </Link>
             <Button

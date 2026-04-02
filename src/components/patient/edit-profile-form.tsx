@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PatientProfileSchema } from "@/lib/schemas";
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ProfileAvatarUpload } from "@/components/shared/profile-avatar-upload";
 import {
   Loader2,
   CheckCircle2,
@@ -38,6 +40,7 @@ interface EditPatientProfileFormProps {
 }
 
 export default function EditPatientProfileForm({ initialData, email }: EditPatientProfileFormProps) {
+  const { data: sessionData } = useSession();
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +100,23 @@ export default function EditPatientProfileForm({ initialData, email }: EditPatie
                 <User className="w-5 h-5" />
                 Personal Information
               </h2>
+
+              {/* profile photo */}
+              <div className="flex flex-col items-center gap-2 mb-6">
+                <ProfileAvatarUpload
+                  currentImage={sessionData?.user?.image}
+                  initials={
+                    (initialData?.fullName ?? "")
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2) || "?"
+                  }
+                  size="lg"
+                />
+                <p className="text-xs text-gray-400">Click to update profile photo</p>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField

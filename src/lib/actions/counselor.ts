@@ -255,6 +255,7 @@ export interface CounselorCard {
     avgRating: number;
     totalReviews: number;
     nextAvailable: string | null;
+    image: string | null;
 }
 
 export interface SearchCounselorsResult {
@@ -338,6 +339,8 @@ export const searchCounselors = async (
             specialties: {
                 include: { specialty: true },
             },
+            // include image so counselor cards can show real profile pictures
+            user: { select: { image: true } },
             slots: {
                 where: {
                     startTime: { gte: new Date() },
@@ -385,6 +388,7 @@ export const searchCounselors = async (
             avgRating,
             totalReviews,
             nextAvailable: p.slots[0]?.startTime?.toISOString() || null,
+            image: p.user.image ?? null,
         };
     });
 
@@ -434,6 +438,7 @@ export interface CounselorDetail {
     totalAppointments: number;
     nextAvailable: string | null;
     memberSince: string;
+    image: string | null;
 }
 
 export const getCounselorDetail = async (counselorId: string): Promise<CounselorDetail | null> => {
@@ -445,7 +450,7 @@ export const getCounselorDetail = async (counselorId: string): Promise<Counselor
         prisma.counselorProfile.findUnique({
             where: { id: counselorId },
             include: {
-                user: { select: { createdAt: true } },
+                user: { select: { createdAt: true, image: true } },
                 specialties: { include: { specialty: true } },
                 slots: {
                     where: {
@@ -493,6 +498,7 @@ export const getCounselorDetail = async (counselorId: string): Promise<Counselor
         totalAppointments: completedCount,
         nextAvailable: profile.slots[0]?.startTime?.toISOString() || null,
         memberSince: profile.user.createdAt.toISOString(),
+        image: profile.user.image ?? null,
     };
 };
 

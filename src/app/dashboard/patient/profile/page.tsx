@@ -4,7 +4,7 @@ import { getPatientProfile } from "@/lib/actions/patient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfileAvatarUpload } from "@/components/shared/profile-avatar-upload";
 import {
   User,
   Mail,
@@ -101,12 +101,11 @@ export default async function PatientProfilePage() {
 
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="flex flex-col items-center gap-3">
-                  <Avatar className="w-28 h-28 border-4 border-slate-200 shadow-lg">
-                    <AvatarImage src={session.user.image || ""} />
-                    <AvatarFallback className="bg-slate-100 text-slate-600 text-2xl font-bold">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
+                  <ProfileAvatarUpload
+                    currentImage={session.user.image ?? null}
+                    initials={initials}
+                    size="lg"
+                  />
                   <Badge className="bg-primary text-white px-4 py-1 text-sm">
                     Patient
                   </Badge>

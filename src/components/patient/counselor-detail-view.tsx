@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookingDialog } from "@/components/patient/booking-dialog";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Star,
   Clock,
@@ -74,16 +75,25 @@ export function CounselorDetailView({ counselor }: CounselorDetailViewProps) {
                     Verified
                   </div>
                 )}
-                <div
-                  className={cn(
-                    "w-32 h-32 rounded-full flex items-center justify-center text-5xl font-bold ring-4",
-                    avatarColor.bg,
-                    avatarColor.ring,
-                    avatarColor.text
-                  )}
-                >
-                  {initials}
-                </div>
+                {counselor.image ? (
+                  <Avatar className="w-32 h-32 ring-4 ring-white shadow-lg">
+                    <AvatarImage src={counselor.image} alt={counselor.fullName} />
+                    <AvatarFallback className={cn("text-5xl font-bold", avatarColor.bg, avatarColor.text)}>
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <div
+                    className={cn(
+                      "w-32 h-32 rounded-full flex items-center justify-center text-5xl font-bold ring-4",
+                      avatarColor.bg,
+                      avatarColor.ring,
+                      avatarColor.text
+                    )}
+                  >
+                    {initials}
+                  </div>
+                )}
               </div>
 
               {/* Info Section */}

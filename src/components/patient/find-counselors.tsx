@@ -40,6 +40,7 @@ import {
   LayoutGrid,
   GraduationCap,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
 interface Specialty {
@@ -501,16 +502,25 @@ export function FindCounselors() {
                       )}
 
                       {/* Circular Avatar */}
-                      <div
-                        className={cn(
-                          "w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold ring-4",
-                          avatarColor.bg,
-                          avatarColor.ring,
-                          avatarColor.text
-                        )}
-                      >
-                        {getInitials(counselor.fullName)}
-                      </div>
+                      {counselor.image ? (
+                        <Avatar className={cn("w-28 h-28 ring-4 ring-white shadow-md")}>
+                          <AvatarImage src={counselor.image} alt={counselor.fullName} />
+                          <AvatarFallback className={cn("text-4xl font-bold", avatarColor.bg, avatarColor.text)}>
+                            {getInitials(counselor.fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <div
+                          className={cn(
+                            "w-28 h-28 rounded-full flex items-center justify-center text-4xl font-bold ring-4",
+                            avatarColor.bg,
+                            avatarColor.ring,
+                            avatarColor.text
+                          )}
+                        >
+                          {getInitials(counselor.fullName)}
+                        </div>
+                      )}
                     </div>
 
                     {/* Name & Professional Title */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CounselorOnboardingSchema } from "@/lib/schemas";
@@ -12,6 +13,7 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DocumentUploader } from "@/components/counselor/document-uploader";
+import { ProfileAvatarUpload } from "@/components/shared/profile-avatar-upload";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +70,7 @@ export default function CounselorOnboardingForm({
   replaceExistingDocument = false,
 }: CounselorOnboardingFormProps) {
   const router = useRouter();
+  const { data: sessionData } = useSession();
   const [step, setStep] = useState<1 | 2 | 3>(initialStep);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{
@@ -215,6 +218,23 @@ export default function CounselorOnboardingForm({
 
         {/* ── STEP 1: Personal Info ── */}
         <div className={step === 1 ? "block space-y-5" : "hidden"}>
+          {/* optional profile photo */}
+          <div className="flex flex-col items-center gap-2 pb-4">
+            <ProfileAvatarUpload
+              currentImage={sessionData?.user?.image}
+              initials={
+                (sessionData?.user?.name ?? "")
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2) || "?"
+              }
+              size="lg"
+            />
+            <p className="text-xs text-gray-400">Optional · you can add a photo later</p>
+          </div>
+
           {/* Email (read-only) */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 flex items-center gap-2">

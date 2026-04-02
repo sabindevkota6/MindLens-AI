@@ -55,6 +55,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: user.email,
             role: user.role,
             name,
+            // seeds token.picture on first login so the session has the image immediately
+            image: user.image ?? undefined,
           };
         }
 
