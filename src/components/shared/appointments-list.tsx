@@ -148,40 +148,41 @@ export function AppointmentsList({
         onValueChange={handleTabChange}
         className="w-full"
       >
-        <TabsList className="w-full grid grid-cols-5 h-12 bg-white border">
+        {/* on mobile: 2-col grid (3 items wrap to second row); sm+: single row of 5 */}
+        <TabsList className="w-full grid grid-cols-3 sm:grid-cols-5 h-auto sm:h-12 bg-white border gap-0.5 sm:gap-0 p-1 sm:p-0">
           <TabsTrigger
             value="upcoming"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium text-xs sm:text-sm py-2 sm:py-0"
           >
-            <Clock className="w-4 h-4 mr-2 hidden sm:block" />
+            <Clock className="w-3.5 h-3.5 mr-1 sm:mr-2 hidden xs:block" />
             Upcoming
           </TabsTrigger>
           <TabsTrigger
             value="ongoing"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium text-xs sm:text-sm py-2 sm:py-0"
           >
-            <Radio className="w-4 h-4 mr-2 hidden sm:block" />
+            <Radio className="w-3.5 h-3.5 mr-1 sm:mr-2 hidden xs:block" />
             Ongoing
           </TabsTrigger>
           <TabsTrigger
             value="completed"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium text-xs sm:text-sm py-2 sm:py-0"
           >
-            <CheckCircle2 className="w-4 h-4 mr-2 hidden sm:block" />
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1 sm:mr-2 hidden xs:block" />
             Completed
           </TabsTrigger>
           <TabsTrigger
             value="missed"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium text-xs sm:text-sm py-2 sm:py-0"
           >
-            <AlertTriangle className="w-4 h-4 mr-2 hidden sm:block" />
+            <AlertTriangle className="w-3.5 h-3.5 mr-1 sm:mr-2 hidden xs:block" />
             Missed
           </TabsTrigger>
           <TabsTrigger
             value="cancelled"
-            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium"
+            className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg font-medium text-xs sm:text-sm py-2 sm:py-0 col-span-1 sm:col-span-1"
           >
-            <XCircle className="w-4 h-4 mr-2 hidden sm:block" />
+            <XCircle className="w-3.5 h-3.5 mr-1 sm:mr-2 hidden xs:block" />
             Cancelled
           </TabsTrigger>
         </TabsList>
@@ -251,7 +252,7 @@ export function AppointmentsList({
                       onClick={() => router.push(`${basePath}/${appt.id}`)}
                       className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden transition-all hover:shadow-md hover:border-gray-300 text-left group"
                     >
-                      <div className="flex items-center justify-between p-5">
+                      <div className="flex items-start sm:items-center justify-between p-4 sm:p-5">
                         <div className="flex-1 min-w-0">
                           {/* Name + title */}
                           <h3 className="font-semibold text-gray-900 truncate">
@@ -271,7 +272,7 @@ export function AppointmentsList({
                           </div>
 
                           {/* Date & time */}
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
                             <span className="flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5" />
                               {format(start, "MMM d, yyyy")}
@@ -284,7 +285,7 @@ export function AppointmentsList({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 ml-4 shrink-0">
+                        <div className="flex items-center gap-2 ml-3 shrink-0 mt-0.5 sm:mt-0">
                           {/* show live pulse for ongoing, otherwise status badge */}
                           {isOngoing ? (
                             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-full">

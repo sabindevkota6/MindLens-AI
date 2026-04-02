@@ -61,7 +61,7 @@ export default async function PatientProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-primary pt-20 pb-10 px-4 md:px-8">
+      <div className="bg-primary pt-20 pb-10 px-4 sm:px-6 md:px-8">
         <div className="max-w-4xl mx-auto space-y-4">
           <Link
             href="/dashboard/patient"
@@ -83,7 +83,7 @@ export default async function PatientProfilePage() {
         </div>
       </div>
 
-      <div className="px-4 md:px-8 -mt-4 pb-12">
+      <div className="px-4 sm:px-6 md:px-8 -mt-4 pb-12">
         <div className="max-w-4xl mx-auto space-y-6">
           {accountStatus && (accountStatus.isBanned || accountStatus.isSuspended) && (
             <AccountRestrictionAlert
@@ -99,7 +99,7 @@ export default async function PatientProfilePage() {
                 Personal Information
               </h2>
 
-              <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
                 <div className="flex flex-col items-center gap-3">
                   <ProfileAvatarUpload
                     currentImage={session.user.image ?? null}

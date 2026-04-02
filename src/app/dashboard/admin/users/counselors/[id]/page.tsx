@@ -125,7 +125,7 @@ export default async function AdminCounselorDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-gray-50">
       {/* header band */}
       <section className="pt-16">
-        <div className="bg-primary px-6 lg:px-8 py-10 pb-20">
+        <div className="bg-primary px-4 sm:px-6 lg:px-8 py-10 pb-20">
           <div className="max-w-7xl mx-auto">
             <Link
               href="/dashboard/admin/users/counselors"
@@ -157,7 +157,7 @@ export default async function AdminCounselorDetailPage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="px-6 lg:px-8 -mt-10 pb-16">
+      <section className="px-4 sm:px-6 lg:px-8 -mt-10 pb-16">
         <div className="max-w-7xl mx-auto space-y-6">
 
           {/* admin actions bar */}

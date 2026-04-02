@@ -35,7 +35,7 @@ export default async function AdminCounselorsPage({ searchParams }: PageProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <section className="pt-16">
-        <div className="bg-primary px-6 lg:px-8 py-12 pb-20">
+        <div className="bg-primary px-4 sm:px-6 lg:px-8 py-12 pb-20">
           <div className="max-w-7xl mx-auto space-y-4">
             <div className="flex items-center gap-2 text-white/70">
               <Users className="w-4 h-4" />
@@ -55,7 +55,7 @@ export default async function AdminCounselorsPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section className="px-6 lg:px-8 -mt-10 pb-16">
+      <section className="px-4 sm:px-6 lg:px-8 -mt-10 pb-16">
         <div className="max-w-7xl mx-auto">
           {"error" in counselorsResult ? (
             <div className="bg-white rounded-2xl p-8 text-center text-red-500 shadow-sm">

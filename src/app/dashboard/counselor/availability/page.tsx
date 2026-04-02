@@ -50,7 +50,7 @@ export default async function AvailabilityPage() {
   if (!isVerified) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="bg-primary pt-20 pb-10 px-6 lg:px-8">
+        <div className="bg-primary pt-20 pb-10 px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-white/15 rounded-lg flex items-center justify-center">
@@ -68,7 +68,7 @@ export default async function AvailabilityPage() {
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-6 lg:px-8 -mt-4 pb-12 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-12 space-y-6">
           <CounselorVerificationAlerts
             verificationStatus={verificationStatus}
             hasVerificationDoc={hasVerificationDoc}
@@ -90,7 +90,7 @@ export default async function AvailabilityPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-primary pt-20 pb-10 px-6 lg:px-8">
+      <div className="bg-primary pt-20 pb-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-white/15 rounded-lg flex items-center justify-center">
@@ -108,7 +108,7 @@ export default async function AvailabilityPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 lg:px-8 -mt-4 pb-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-4 pb-12">
         <Tabs defaultValue="schedule" className="w-full">
           <div className="sticky top-16 z-40 mb-2 overflow-hidden rounded-xl border border-gray-200/70 bg-gray-50/95 px-2.5 py-2.5 shadow-[0_4px_16px_-6px_rgba(0,0,0,0.08)] backdrop-blur-sm supports-[backdrop-filter]:bg-gray-50/85">
             <TabsList className="grid w-full grid-cols-2 items-center gap-3 !h-auto !min-h-0 p-0 bg-transparent border-0 shadow-none">

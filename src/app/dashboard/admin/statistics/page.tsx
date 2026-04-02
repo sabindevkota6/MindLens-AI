@@ -22,7 +22,7 @@ export default async function AdminDashboardPage() {
     <div className="min-h-screen bg-gray-50">
       {/* hero banner — same structure as verification/page.tsx */}
       <section className="pt-16">
-        <div className="bg-primary px-6 lg:px-8 py-14 pb-28">
+        <div className="bg-primary px-4 sm:px-6 lg:px-8 py-10 sm:py-14 pb-24 sm:pb-28">
           <div className="max-w-7xl mx-auto space-y-4">
             {/* breadcrumb */}
             <div className="flex items-center gap-2 text-white/70">
@@ -30,7 +30,7 @@ export default async function AdminDashboardPage() {
               <span className="text-sm font-medium">Admin · Dashboard</span>
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
               Platform Analytics
             </h1>
 
@@ -60,7 +60,7 @@ export default async function AdminDashboardPage() {
       </section>
 
       {/* main content — overlaps hero bottom with negative margin */}
-      <section className="px-6 lg:px-8 -mt-14 pb-16">
+      <section className="px-4 sm:px-6 lg:px-8 -mt-14 pb-16">
         <div className="max-w-7xl mx-auto">
           {"error" in stats ? (
             // error state card

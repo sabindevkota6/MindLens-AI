@@ -57,7 +57,7 @@ export default async function AdminVerificationDetailPage({
   return (
     <div className="min-h-screen bg-gray-50">
       <section className="pt-16">
-        <div className="bg-primary px-6 lg:px-8 py-10 md:py-12 pb-20 md:pb-24">
+        <div className="bg-primary px-4 sm:px-6 lg:px-8 py-10 md:py-12 pb-20 md:pb-24">
           <div className="max-w-7xl mx-auto space-y-4">
             <Link
               href="/dashboard/admin/verification"
@@ -84,7 +84,7 @@ export default async function AdminVerificationDetailPage({
         </div>
       </section>
 
-      <section className="px-6 lg:px-8 -mt-10 pb-16">
+      <section className="px-4 sm:px-6 lg:px-8 -mt-10 pb-16">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
             <Card className="border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-forwards">

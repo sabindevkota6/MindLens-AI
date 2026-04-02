@@ -38,7 +38,7 @@ export default async function AdminSettingsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* hero banner */}
       <section className="pt-16">
-        <div className="bg-primary px-6 lg:px-8 py-12 pb-20">
+        <div className="bg-primary px-4 sm:px-6 lg:px-8 py-12 pb-20">
           <div className="max-w-7xl mx-auto space-y-4">
             {/* breadcrumb */}
             <div className="flex items-center gap-2 text-white/70">
@@ -72,7 +72,7 @@ export default async function AdminSettingsPage() {
       </section>
 
       {/* content — overlaps hero with -mt-10 */}
-      <section className="px-6 lg:px-8 -mt-10 pb-16">
+      <section className="px-4 sm:px-6 lg:px-8 -mt-10 pb-16">
         <div className="max-w-7xl mx-auto">
           <AdminSettingsPanel
             initialSettings={settings}

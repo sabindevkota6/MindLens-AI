@@ -28,7 +28,7 @@ export default async function AdminVerificationQueuePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <section className="pt-16">
-        <div className="bg-primary px-6 lg:px-8 py-12 md:py-14 pb-20 md:pb-24">
+        <div className="bg-primary px-4 sm:px-6 lg:px-8 py-12 md:py-14 pb-20 md:pb-24">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col gap-3 md:gap-4">
               <div className="flex items-center gap-2 text-white/80">
@@ -52,7 +52,7 @@ export default async function AdminVerificationQueuePage() {
         </div>
       </section>
 
-      <section className="px-6 lg:px-8 -mt-10 pb-16">
+      <section className="px-4 sm:px-6 lg:px-8 -mt-10 pb-16">
         <div className="max-w-7xl mx-auto">
           {data.length === 0 ? (
             <Card className="border-gray-100 shadow-sm">

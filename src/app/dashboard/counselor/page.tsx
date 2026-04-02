@@ -38,7 +38,7 @@ export default async function CounselorDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <section className="pt-16">
-        <div className="bg-primary px-6 lg:px-8 py-16 pb-24">
+        <div className="bg-primary px-4 sm:px-6 lg:px-8 py-12 sm:py-16 pb-20 sm:pb-24">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div className="space-y-3">
@@ -46,16 +46,16 @@ export default async function CounselorDashboard() {
                   <LayoutDashboard className="w-5 h-5 text-white/70" />
                   <span className="text-sm text-white/70 font-medium">Dashboard</span>
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
                   Welcome back, {firstName}
                 </h1>
-                <p className="text-white/75 text-base max-w-lg">
+                <p className="text-white/75 text-sm sm:text-base max-w-lg">
                   {isVerified
                     ? "Here's an overview of your practice performance and upcoming schedule."
                     : "Complete your verification to start accepting patient appointments."}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {isVerified && (
                   <Link href="/dashboard/counselor/availability">
                     <Button className="bg-white/15 hover:bg-white/25 text-white border-0 rounded-xl px-5 py-5 text-sm font-semibold gap-2 backdrop-blur-sm">
@@ -78,7 +78,7 @@ export default async function CounselorDashboard() {
 
       <section
         className={cn(
-          "px-6 lg:px-8 -mt-8",
+          "px-4 sm:px-6 lg:px-8 -mt-8",
           !isVerified && "pb-12"
         )}
       >
@@ -111,12 +111,12 @@ export default async function CounselorDashboard() {
       </section>
 
       {isVerified && (
-        <section className="px-6 lg:px-8 py-12">
+        <section className="px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
           <div className="max-w-7xl mx-auto">
             <Card className="border-0 shadow-sm rounded-3xl overflow-hidden bg-gradient-to-br from-[#00796B] to-[#009688]">
               <CardContent className="p-0">
                 <div className="grid lg:grid-cols-2 gap-0">
-                  <div className="p-10 lg:p-14 flex flex-col justify-center space-y-5">
+                  <div className="p-6 sm:p-10 lg:p-14 flex flex-col justify-center space-y-5">
                     <div>
                       <span className="inline-block bg-white/15 text-white text-sm font-medium px-5 py-2 rounded-full backdrop-blur-sm">
                         Grow Your Practice
