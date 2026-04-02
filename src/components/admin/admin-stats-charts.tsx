@@ -43,6 +43,7 @@ import {
   PieChart as PieChartIcon,
   BarChart2,
   Activity,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -776,19 +777,17 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
               <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0" />
             </Link>
 
-            {/* platform settings — coming soon */}
-            <div className="flex items-center gap-4 p-3.5 rounded-xl bg-gray-50 opacity-50 cursor-not-allowed pointer-events-none">
-              <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <CalendarCheck className="w-4 h-4 text-gray-400" />
+            {/* platform settings */}
+            <Link href="/dashboard/admin/settings" className="flex items-center gap-4 p-3.5 rounded-xl bg-gray-50 hover:bg-primary/5 transition-colors group">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors flex-shrink-0">
+                <Settings className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-500">Platform Settings</p>
-                <p className="text-xs text-gray-400">Configure global app settings</p>
+                <p className="text-sm font-medium text-gray-900">Platform Settings</p>
+                <p className="text-xs text-gray-500">Configure global app settings</p>
               </div>
-              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full flex-shrink-0">
-                Soon
-              </span>
-            </div>
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0" />
+            </Link>
           </CardContent>
         </Card>
       </div>

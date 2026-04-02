@@ -242,3 +242,14 @@ model AdminActionLog {
   @@index([targetUserId])
   @@index([adminUserId])
 }
+
+// singleton row for platform-wide configuration — created on first read with defaults
+model PlatformSettings {
+  id              String   @id @default("singleton")
+  suspendWarnAt   Int      @default(7)
+  autoSuspendAt   Int      @default(10)
+  autoSuspendDays Int      @default(5)
+  banWarnAt       Int      @default(15)
+  autoBanAt       Int      @default(20)
+  updatedAt       DateTime @updatedAt
+}

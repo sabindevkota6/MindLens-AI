@@ -16,18 +16,14 @@ import {
   counselorUnsuspendedEmail,
 } from "@/lib/email-templates";
 
-// thresholds for patient report-based enforcement
-const PATIENT_SUSPEND_WARN_AT = 7;
-const PATIENT_BAN_WARN_AT = 15;
-const PATIENT_AUTO_SUSPEND_AT = 10;
-const PATIENT_AUTO_BAN_AT = 20;
-const AUTO_SUSPEND_DAYS = 5;
-
-// thresholds for counselor 1-star rating enforcement
-const COUNSELOR_SUSPEND_WARN_AT = 7;
-const COUNSELOR_BAN_WARN_AT = 15;
-const COUNSELOR_AUTO_SUSPEND_AT = 10;
-const COUNSELOR_AUTO_BAN_AT = 20;
+// fetch enforcement thresholds from db, creating the row with defaults if it doesn't exist yet
+async function getEnforcementThresholds() {
+  return prisma.platformSettings.upsert({
+    where: { id: "singleton" },
+    create: {},
+    update: {},
+  });
+}
 
 // finds any admin user to attribute system auto-actions to in the audit log
 async function getSystemAdminId(): Promise<string | null> {
@@ -37,12 +33,13 @@ async function getSystemAdminId(): Promise<string | null> {
 
 // called after every new report on a patient — checks total count and triggers enforcement
 export async function checkPatientReportEnforcement(patientProfileId: string) {
-  const [patient, reportCount] = await Promise.all([
+  const [patient, reportCount, thresholds] = await Promise.all([
     prisma.patientProfile.findUnique({
       where: { id: patientProfileId },
       include: { user: { select: { id: true, email: true, isBanned: true, isSuspended: true } } },
     }),
     prisma.report.count({ where: { patientProfileId } }),
+    getEnforcementThresholds(),
   ]);
 
   if (!patient) return;
@@ -54,7 +51,7 @@ export async function checkPatientReportEnforcement(patientProfileId: string) {
   const name = patient.fullName;
   const email = user.email;
 
-  if (reportCount >= PATIENT_AUTO_BAN_AT) {
+  if (reportCount >= thresholds.autoBanAt) {
     const adminId = await getSystemAdminId();
     await prisma.user.update({
       where: { id: user.id },
@@ -63,7 +60,7 @@ export async function checkPatientReportEnforcement(patientProfileId: string) {
         isSuspended: false,
         suspendedUntil: null,
         bannedAt: new Date(),
-        banReason: "Automatically banned after accumulating 20 conduct reports.",
+        banReason: `Automatically banned after accumulating ${thresholds.autoBanAt} conduct reports.`,
       },
     });
     if (adminId) {
@@ -72,7 +69,7 @@ export async function checkPatientReportEnforcement(patientProfileId: string) {
           adminUserId: adminId,
           targetUserId: user.id,
           action: "BAN",
-          reason: "Auto-ban: 20 conduct reports",
+          reason: `Auto-ban: ${thresholds.autoBanAt} conduct reports`,
           metadata: { reportCount, auto: true },
         },
       });
@@ -85,17 +82,17 @@ export async function checkPatientReportEnforcement(patientProfileId: string) {
     return;
   }
 
-  if (reportCount >= PATIENT_AUTO_SUSPEND_AT && !user.isSuspended) {
+  if (reportCount >= thresholds.autoSuspendAt && !user.isSuspended) {
     const adminId = await getSystemAdminId();
     const until = new Date();
-    until.setDate(until.getDate() + AUTO_SUSPEND_DAYS);
+    until.setDate(until.getDate() + thresholds.autoSuspendDays);
     await prisma.user.update({
       where: { id: user.id },
       data: {
         isSuspended: true,
         suspendedUntil: until,
         suspendedAt: new Date(),
-        suspendReason: "Automatically suspended after accumulating 10 conduct reports.",
+        suspendReason: `Automatically suspended after accumulating ${thresholds.autoSuspendAt} conduct reports.`,
       },
     });
     if (adminId) {
@@ -104,8 +101,8 @@ export async function checkPatientReportEnforcement(patientProfileId: string) {
           adminUserId: adminId,
           targetUserId: user.id,
           action: "SUSPEND",
-          reason: "Auto-suspend: 10 conduct reports",
-          metadata: { reportCount, days: AUTO_SUSPEND_DAYS, auto: true },
+          reason: `Auto-suspend: ${thresholds.autoSuspendAt} conduct reports`,
+          metadata: { reportCount, days: thresholds.autoSuspendDays, auto: true },
         },
       });
     }
@@ -114,16 +111,16 @@ export async function checkPatientReportEnforcement(patientProfileId: string) {
       subject: "Your MindLens AI account has been suspended",
       html: patientSuspendedEmail({
         patientName: name,
-        days: AUTO_SUSPEND_DAYS,
+        days: thresholds.autoSuspendDays,
         suspendedUntil: format(until, "MMMM d, yyyy"),
-        reason: "Accumulating 10 conduct reports from counselors.",
+        reason: `Accumulating ${thresholds.autoSuspendAt} conduct reports from counselors.`,
       }),
     }).catch(console.error);
     return;
   }
 
   // warning emails (fire once at exact thresholds)
-  if (reportCount === PATIENT_BAN_WARN_AT) {
+  if (reportCount === thresholds.banWarnAt) {
     sendEmail({
       to: email,
       subject: "Final warning — your MindLens AI account is at risk of being banned",
@@ -132,7 +129,7 @@ export async function checkPatientReportEnforcement(patientProfileId: string) {
     return;
   }
 
-  if (reportCount === PATIENT_SUSPEND_WARN_AT) {
+  if (reportCount === thresholds.suspendWarnAt) {
     sendEmail({
       to: email,
       subject: "Warning — your MindLens AI account conduct",
@@ -143,7 +140,7 @@ export async function checkPatientReportEnforcement(patientProfileId: string) {
 
 // called after every new 1-star review on a counselor — checks total and triggers enforcement
 export async function checkCounselorRatingEnforcement(counselorProfileId: string) {
-  const [counselor, oneStarCount] = await Promise.all([
+  const [counselor, oneStarCount, thresholds] = await Promise.all([
     prisma.counselorProfile.findUnique({
       where: { id: counselorProfileId },
       include: { user: { select: { id: true, email: true, isBanned: true, isSuspended: true } } },
@@ -154,6 +151,7 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
         appointment: { counselorProfileId },
       },
     }),
+    getEnforcementThresholds(),
   ]);
 
   if (!counselor) return;
@@ -164,7 +162,7 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
   const name = counselor.fullName;
   const email = user.email;
 
-  if (oneStarCount >= COUNSELOR_AUTO_BAN_AT) {
+  if (oneStarCount >= thresholds.autoBanAt) {
     const adminId = await getSystemAdminId();
     await prisma.user.update({
       where: { id: user.id },
@@ -173,7 +171,7 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
         isSuspended: false,
         suspendedUntil: null,
         bannedAt: new Date(),
-        banReason: "Automatically banned after receiving 20 one-star ratings.",
+        banReason: `Automatically banned after receiving ${thresholds.autoBanAt} one-star ratings.`,
       },
     });
     if (adminId) {
@@ -182,7 +180,7 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
           adminUserId: adminId,
           targetUserId: user.id,
           action: "BAN",
-          reason: "Auto-ban: 20 one-star reviews",
+          reason: `Auto-ban: ${thresholds.autoBanAt} one-star reviews`,
           metadata: { oneStarCount, auto: true },
         },
       });
@@ -195,17 +193,17 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
     return;
   }
 
-  if (oneStarCount >= COUNSELOR_AUTO_SUSPEND_AT && !user.isSuspended) {
+  if (oneStarCount >= thresholds.autoSuspendAt && !user.isSuspended) {
     const adminId = await getSystemAdminId();
     const until = new Date();
-    until.setDate(until.getDate() + AUTO_SUSPEND_DAYS);
+    until.setDate(until.getDate() + thresholds.autoSuspendDays);
     await prisma.user.update({
       where: { id: user.id },
       data: {
         isSuspended: true,
         suspendedUntil: until,
         suspendedAt: new Date(),
-        suspendReason: "Automatically suspended after receiving 10 one-star ratings.",
+        suspendReason: `Automatically suspended after receiving ${thresholds.autoSuspendAt} one-star ratings.`,
       },
     });
     if (adminId) {
@@ -214,8 +212,8 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
           adminUserId: adminId,
           targetUserId: user.id,
           action: "SUSPEND",
-          reason: "Auto-suspend: 10 one-star reviews",
-          metadata: { oneStarCount, days: AUTO_SUSPEND_DAYS, auto: true },
+          reason: `Auto-suspend: ${thresholds.autoSuspendAt} one-star reviews`,
+          metadata: { oneStarCount, days: thresholds.autoSuspendDays, auto: true },
         },
       });
     }
@@ -224,15 +222,15 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
       subject: "Your MindLens AI counselor account has been suspended",
       html: counselorSuspendedEmail({
         counselorName: name,
-        days: AUTO_SUSPEND_DAYS,
+        days: thresholds.autoSuspendDays,
         suspendedUntil: format(until, "MMMM d, yyyy"),
-        reason: "Receiving 10 one-star ratings from patients.",
+        reason: `Receiving ${thresholds.autoSuspendAt} one-star ratings from patients.`,
       }),
     }).catch(console.error);
     return;
   }
 
-  if (oneStarCount === COUNSELOR_BAN_WARN_AT) {
+  if (oneStarCount === thresholds.banWarnAt) {
     sendEmail({
       to: email,
       subject: "Final warning — your MindLens AI counselor account is at risk of being banned",
@@ -241,7 +239,7 @@ export async function checkCounselorRatingEnforcement(counselorProfileId: string
     return;
   }
 
-  if (oneStarCount === COUNSELOR_SUSPEND_WARN_AT) {
+  if (oneStarCount === thresholds.suspendWarnAt) {
     sendEmail({
       to: email,
       subject: "Quality warning — your MindLens AI counselor account",

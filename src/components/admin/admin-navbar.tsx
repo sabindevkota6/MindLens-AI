@@ -30,6 +30,7 @@ export function AdminNavbar() {
   const verificationActive = pathname.startsWith("/dashboard/admin/verification");
   const reportsActive = pathname.startsWith("/dashboard/admin/reports");
   const usersActive = pathname.startsWith("/dashboard/admin/users");
+  const settingsActive = pathname.startsWith("/dashboard/admin/settings");
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
@@ -66,6 +67,10 @@ export function AdminNavbar() {
 
             <NavLink href="/dashboard/admin/users/counselors" active={usersActive}>
               User Management
+            </NavLink>
+
+            <NavLink href="/dashboard/admin/settings" active={settingsActive}>
+              Settings
             </NavLink>
           </div>
 
