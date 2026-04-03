@@ -100,3 +100,8 @@ export const PatientNoteSchema = z.object({
 export const ReportSchema = z.object({
   reason: z.string().min(1, "Please provide a reason").max(2000, "Reason is too long (max 2000 characters)"),
 });
+
+export const BookAppointmentSchema = z.object({
+  medicalConcern: z.string().max(500, "Medical concern is too long (max 500 characters)").optional(),
+  emotionLogId: z.string().optional(),
+});

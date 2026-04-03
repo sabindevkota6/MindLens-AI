@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { NotificationType } from "@prisma/client";
+import { Prisma, type NotificationType } from "@prisma/client";
 
 type CreateNotificationInput = {
   userId: string;
@@ -24,7 +24,7 @@ export async function createNotification({
       type,
       title,
       body,
-      data: data ?? undefined,
+      data: data ? (data as Prisma.InputJsonValue) : undefined,
     },
   });
 }
@@ -40,7 +40,7 @@ export async function createNotifications(
       type,
       title,
       body,
-      data: data ?? undefined,
+      data: data ? (data as Prisma.InputJsonValue) : undefined,
     })),
   });
 }

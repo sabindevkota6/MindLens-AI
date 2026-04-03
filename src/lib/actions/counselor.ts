@@ -599,10 +599,16 @@ export const getCounselorAvailableDates = async (
 
 // Book an appointment
 
-export const bookAppointment = async (slotId: string) => {
+export const bookAppointment = async (slotId: string, medicalConcern?: string, emotionLogId?: string) => {
     const session = await auth();
     if (!session || session.user.role !== "PATIENT") {
         return { error: "Unauthorized" };
+    }
+
+    // validate optional fields
+    const trimmedConcern = medicalConcern?.trim() || undefined;
+    if (trimmedConcern && trimmedConcern.length > 500) {
+        return { error: "Medical concern is too long (max 500 characters)" };
     }
 
     try {
@@ -613,6 +619,19 @@ export const bookAppointment = async (slotId: string) => {
 
         if (!patientProfile) {
             return { error: "Patient profile not found" };
+        }
+
+        // verify the emotion log belongs to this patient if provided
+        let verifiedEmotionLogId: string | undefined;
+        if (emotionLogId) {
+            const emotionLog = await prisma.emotionLog.findUnique({
+                where: { id: emotionLogId },
+                select: { id: true, patientProfileId: true },
+            });
+            if (!emotionLog || emotionLog.patientProfileId !== patientProfile.id) {
+                return { error: "Selected emotion report not found" };
+            }
+            verifiedEmotionLogId = emotionLog.id;
         }
 
         const slot = await prisma.availabilitySlot.findUnique({
@@ -680,6 +699,8 @@ export const bookAppointment = async (slotId: string) => {
                         cancelledBy: null,
                         meetingLink: null,
                         patientNote: null,
+                        medicalConcern: trimmedConcern ?? null,
+                        attachedEmotionLogId: verifiedEmotionLogId ?? null,
                         reminderSent: false,
                         createdAt: new Date(),
                     },
@@ -691,6 +712,8 @@ export const bookAppointment = async (slotId: string) => {
                         patientProfileId: patientProfile.id,
                         counselorProfileId: slot.counselorProfileId,
                         status: "SCHEDULED",
+                        medicalConcern: trimmedConcern,
+                        attachedEmotionLogId: verifiedEmotionLogId,
                     },
                 });
             }
@@ -713,6 +736,26 @@ export const bookAppointment = async (slotId: string) => {
             const dateStr = format(slot.startTime, "MMMM d, yyyy");
             const timeStr = format(slot.startTime, "h:mm a");
 
+            // generate emotion report PDF attachment if patient shared one
+            let pdfBuffer: Buffer | null = null;
+            let pdfFilename = "";
+            if (verifiedEmotionLogId) {
+                try {
+                    const { buildReportPayload } = await import("@/lib/emotion-report-payload");
+                    const { renderEmotionReportPdfBuffer } = await import("@/lib/emotion-report-render");
+                    const emotionLog = await prisma.emotionLog.findUnique({ where: { id: verifiedEmotionLogId } });
+                    if (emotionLog) {
+                        const payload = buildReportPayload(emotionLog);
+                        if (payload) {
+                            pdfBuffer = Buffer.from(await renderEmotionReportPdfBuffer(payload));
+                            pdfFilename = `mindlens-emotion-report-${verifiedEmotionLogId.slice(0, 8)}.pdf`;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to generate emotion report PDF for email:", err);
+                }
+            }
+
             // email to patient
             sendEmail({
                 to: patientProfile.user.email,
@@ -727,7 +770,7 @@ export const bookAppointment = async (slotId: string) => {
                 }),
             }).catch(console.error);
 
-            // email to counselor
+            // email to counselor with optional medical concern + emotion report attachment
             sendEmail({
                 to: slot.counselor.user.email,
                 subject: "New Appointment Booked - MindLens AI",
@@ -737,7 +780,10 @@ export const bookAppointment = async (slotId: string) => {
                     date: dateStr,
                     time: timeStr,
                     meetingLink: inAppMeetingUrl,
+                    medicalConcern: trimmedConcern,
+                    emotionReportAttached: !!pdfBuffer,
                 }),
+                ...(pdfBuffer ? { attachments: [{ filename: pdfFilename, content: pdfBuffer }] } : {}),
             }).catch(console.error);
 
             // in-app notifications for both parties

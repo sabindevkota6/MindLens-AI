@@ -189,16 +189,19 @@ model Appointment {
   patientProfileId   String
   counselorProfileId String
   
-  meetingLink        String?
-  patientNote        String?           @db.Text
-  cancelledBy        Role?
-  reminderSent       Boolean           @default(false)
-  status             AppointmentStatus @default(SCHEDULED)
-  createdAt          DateTime          @default(now())
+  meetingLink          String?
+  patientNote          String?           @db.Text
+  medicalConcern       String?           @db.Text
+  attachedEmotionLogId String?
+  cancelledBy          Role?
+  reminderSent         Boolean           @default(false)
+  status               AppointmentStatus @default(SCHEDULED)
+  createdAt            DateTime          @default(now())
 
   slot               AvailabilitySlot  @relation(fields: [slotId], references: [id])
   patient            PatientProfile    @relation(fields: [patientProfileId], references: [id])
   counselor          CounselorProfile  @relation(fields: [counselorProfileId], references: [id])
+  attachedEmotionLog EmotionLog?       @relation(fields: [attachedEmotionLogId], references: [id], onDelete: SetNull)
   review             Review?
   reports            Report[]
   
@@ -241,6 +244,7 @@ model EmotionLog {
   recordedAt       DateTime       @default(now())
 
   patient          PatientProfile @relation(fields: [patientProfileId], references: [id], onDelete: Cascade)
+  bookings         Appointment[]
 }
 
 // tracks every admin action for audit trail

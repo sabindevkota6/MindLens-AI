@@ -6,15 +6,17 @@ interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
+  attachments?: { filename: string; content: Buffer }[];
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, attachments }: SendEmailOptions) {
   try {
     const { error } = await resend.emails.send({
       from: "MindLens AI <onboarding@resend.dev>",
       to,
       subject,
       html,
+      ...(attachments && attachments.length > 0 ? { attachments } : {}),
     });
 
     if (error) {

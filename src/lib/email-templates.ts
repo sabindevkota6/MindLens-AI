@@ -167,6 +167,8 @@ interface CounselorBookingEmailProps {
   date: string;
   time: string;
   meetingLink: string;
+  medicalConcern?: string;
+  emotionReportAttached?: boolean;
 }
 
 export function counselorBookingNotificationEmail({
@@ -175,7 +177,28 @@ export function counselorBookingNotificationEmail({
   date,
   time,
   meetingLink,
+  medicalConcern,
+  emotionReportAttached,
 }: CounselorBookingEmailProps): string {
+  const medicalConcernSection = medicalConcern
+    ? `
+      <!-- Medical Concern -->
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:16px 20px;margin-bottom:16px;">
+        <p style="color:#0f766e;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 8px;">Patient's Medical Concern</p>
+        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0;">${medicalConcern}</p>
+      </div>`
+    : "";
+
+  const emotionReportNote = emotionReportAttached
+    ? `
+      <!-- Emotion Report Attachment Note -->
+      <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+        <p style="color:#5b21b6;font-size:13px;line-height:1.5;margin:0;">
+          📎 <strong>Emotion Report Attached:</strong> The patient has shared an emotion analysis report. Please check the attachment in this email.
+        </p>
+      </div>`
+    : "";
+
   return `
 <!DOCTYPE html>
 <html>
@@ -189,15 +212,15 @@ export function counselorBookingNotificationEmail({
     <div style="background-color:#00796B;padding:32px 24px;text-align:center;">
       <h1 style="color:#ffffff;font-size:22px;margin:0;">New Appointment Booked</h1>
     </div>
-    
+
     <!-- Body -->
     <div style="padding:32px 24px;">
       <p style="color:#374151;font-size:15px;line-height:1.6;margin:0 0 20px;">
         Hi <strong>${counselorName}</strong>, a new session has been booked with you!
       </p>
-      
+
       <!-- Appointment Details Card -->
-      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:20px;margin-bottom:24px;">
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:20px;margin-bottom:16px;">
         <p style="color:#0f766e;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 12px;">Session Details</p>
         <table style="width:100%;border-collapse:collapse;">
           <tr>
@@ -214,6 +237,9 @@ export function counselorBookingNotificationEmail({
           </tr>
         </table>
       </div>
+
+      ${medicalConcernSection}
+      ${emotionReportNote}
 
       <!-- Join Button -->
       <div style="text-align:center;margin-bottom:24px;">
