@@ -8,6 +8,7 @@ import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getNavLinksForRole } from "@/lib/chat-navigation";
+import { NotificationBell } from "@/components/shared/notification-bell";
 import { LogOut, UserCircle, Menu, X } from "lucide-react";
 
 export function AppNavbar({ role }: { role: string }) {
@@ -116,8 +117,9 @@ export function AppNavbar({ role }: { role: string }) {
               })}
             </div>
 
-            {/* Desktop right: profile + sign out */}
+            {/* Desktop right: notifications + profile + sign out */}
             <div className="hidden md:flex items-center gap-3">
+              <NotificationBell />
               <Link href={profileHref}>
                 <Button
                   variant="ghost"
@@ -150,8 +152,9 @@ export function AppNavbar({ role }: { role: string }) {
               </Button>
             </div>
 
-            {/* Mobile right: profile avatar + hamburger */}
+            {/* Mobile right: notifications + profile avatar + hamburger */}
             <div className="flex md:hidden items-center gap-2">
+              <NotificationBell />
               <Link href={profileHref} onClick={() => setMobileOpen(false)}>
                 {userImage ? (
                   <Avatar className="w-8 h-8 ring-2 ring-primary/20">

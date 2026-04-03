@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 
 // shared s3 client for presigned reads (same config as verification uploads)
 const s3 = new S3Client({
@@ -204,7 +205,7 @@ export async function approveCounselorVerification(
 
   const profile = await prisma.counselorProfile.findUnique({
     where: { id: counselorProfileId },
-    include: { user: { select: { email: true } } },
+    include: { user: { select: { id: true, email: true } } },
   });
 
   if (!profile || profile.verificationStatus !== "PENDING") {
@@ -228,6 +229,14 @@ export async function approveCounselorVerification(
     html,
   });
 
+  createNotification({
+    userId: profile.user.id,
+    type: "VERIFICATION_APPROVED",
+    title: "Verification Approved",
+    body: "Your professional verification has been approved. Patients can now find and book sessions with you.",
+    data: { href: "/dashboard/counselor/profile" },
+  }).catch(console.error);
+
   revalidateCounselorSide();
   revalidatePath("/dashboard/admin/verification");
   revalidatePath(`/dashboard/admin/verification/${counselorProfileId}`);
@@ -243,7 +252,7 @@ export async function rejectCounselorVerification(
 
   const profile = await prisma.counselorProfile.findUnique({
     where: { id: counselorProfileId },
-    include: { user: { select: { email: true } } },
+    include: { user: { select: { id: true, email: true } } },
   });
 
   if (!profile || profile.verificationStatus !== "PENDING") {
@@ -266,6 +275,14 @@ export async function rejectCounselorVerification(
     subject: "Verification update — action needed",
     html,
   });
+
+  createNotification({
+    userId: profile.user.id,
+    type: "VERIFICATION_REJECTED",
+    title: "Verification Rejected",
+    body: "Your verification documents could not be approved. Please upload a valid professional license or certificate.",
+    data: { href: "/dashboard/counselor/profile" },
+  }).catch(console.error);
 
   revalidateCounselorSide();
   revalidatePath("/dashboard/admin/verification");

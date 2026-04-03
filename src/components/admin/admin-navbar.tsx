@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X } from "lucide-react";
+import { NotificationBell } from "@/components/shared/notification-bell";
 
 // nav link helper
 function NavLink({
@@ -88,8 +89,9 @@ export function AdminNavbar() {
               ))}
             </div>
 
-            {/* Desktop sign out */}
+            {/* Desktop sign out + notifications */}
             <div className="hidden md:flex shrink-0 items-center gap-3">
+              <NotificationBell />
               <Button
                 variant="default"
                 className="rounded-full bg-black hover:bg-gray-800 text-white px-5 flex items-center gap-2"
@@ -100,8 +102,9 @@ export function AdminNavbar() {
               </Button>
             </div>
 
-            {/* Mobile hamburger */}
-            <div className="flex md:hidden items-center">
+            {/* Mobile hamburger + notifications */}
+            <div className="flex md:hidden items-center gap-2">
+              <NotificationBell />
               <button
                 onClick={() => setMobileOpen((o) => !o)}
                 className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"

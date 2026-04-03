@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
 import { cancellationEmail, appointmentAdjustedEmail } from "@/lib/email-templates";
 import { checkPatientReportEnforcement, checkCounselorRatingEnforcement } from "@/lib/user-enforcement";
+import { createNotifications } from "@/lib/notifications";
 import { format } from "date-fns";
 
 // ─── Constants ───
@@ -344,6 +345,15 @@ export const cancelAppointment = async (appointmentId: string) => {
                 time: timeStr,
             }),
         }).catch(console.error);
+
+        // notify counselor in-app
+        createNotifications([{
+            userId: appointment.counselor.userId,
+            type: "APPOINTMENT_CANCELLED",
+            title: "Appointment Cancelled",
+            body: `${appointment.patient.fullName} cancelled their session scheduled for ${dateStr} at ${timeStr}.`,
+            data: { href: "/dashboard/counselor/appointments" },
+        }]).catch(console.error);
     } else {
         sendEmail({
             to: appointment.patient.user.email,
@@ -356,6 +366,15 @@ export const cancelAppointment = async (appointmentId: string) => {
                 time: timeStr,
             }),
         }).catch(console.error);
+
+        // notify patient in-app
+        createNotifications([{
+            userId: appointment.patient.userId,
+            type: "APPOINTMENT_CANCELLED",
+            title: "Appointment Cancelled",
+            body: `Your session with ${appointment.counselor.fullName} on ${dateStr} at ${timeStr} has been cancelled.`,
+            data: { href: "/dashboard/patient/appointments" },
+        }]).catch(console.error);
     }
 
     revalidatePath("/dashboard/patient/appointments");
@@ -374,7 +393,8 @@ export const markAppointmentCompleted = async (appointmentId: string) => {
         where: { id: appointmentId },
         include: {
             slot: true,
-            counselor: { select: { userId: true } },
+            counselor: { select: { userId: true, fullName: true } },
+            patient: { select: { userId: true } },
         },
     });
 
@@ -391,6 +411,15 @@ export const markAppointmentCompleted = async (appointmentId: string) => {
         where: { id: appointmentId },
         data: { status: "COMPLETED" },
     });
+
+    // notify patient — prompt them to leave a review
+    createNotifications([{
+        userId: appointment.patient.userId,
+        type: "APPOINTMENT_COMPLETED",
+        title: "Session Completed",
+        body: `Your session with ${appointment.counselor.fullName} is complete. Share your experience by leaving a review.`,
+        data: { href: `/dashboard/patient/appointments/${appointmentId}` },
+    }]).catch(console.error);
 
     revalidatePath("/dashboard/counselor/appointments");
     revalidatePath("/dashboard/patient/appointments");
@@ -453,6 +482,7 @@ export const adjustAppointmentTime = async (appointmentId: string, newSlotId: st
             },
             patient: {
                 select: {
+                    userId: true,
                     fullName: true,
                     user: { select: { email: true } },
                 },
@@ -526,6 +556,15 @@ export const adjustAppointmentTime = async (appointmentId: string, newSlotId: st
         console.error("Failed to send adjustment email:", e);
     }
 
+    // notify patient in-app about the reschedule
+    createNotifications([{
+        userId: appointment.patient.userId,
+        type: "APPOINTMENT_ADJUSTED",
+        title: "Session Time Updated",
+        body: `${appointment.counselor.fullName} rescheduled your session to ${format(newSlot.startTime, "MMM d")} at ${format(newSlot.startTime, "h:mm a")}.`,
+        data: { href: `/dashboard/patient/appointments/${appointmentId}` },
+    }]).catch(console.error);
+
     revalidatePath("/dashboard/counselor/appointments");
     revalidatePath("/dashboard/patient/appointments");
     return { success: "Appointment time adjusted successfully" };
@@ -543,7 +582,8 @@ export const submitReview = async (appointmentId: string, rating: number, commen
     const appointment = await prisma.appointment.findUnique({
         where: { id: appointmentId },
         include: {
-            patient: { select: { userId: true } },
+            patient: { select: { userId: true, fullName: true } },
+            counselor: { select: { userId: true } },
             review: { select: { id: true } },
         },
     });
@@ -565,6 +605,16 @@ export const submitReview = async (appointmentId: string, rating: number, commen
     if (rating === 1) {
         checkCounselorRatingEnforcement(appointment.counselorProfileId).catch(console.error);
     }
+
+    // notify counselor of the new review
+    const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
+    createNotifications([{
+        userId: appointment.counselor.userId,
+        type: "REVIEW_RECEIVED",
+        title: "New Review Received",
+        body: `${appointment.patient.fullName} rated your session ${stars} (${rating}/5).`,
+        data: { href: `/dashboard/counselor/appointments/${appointmentId}` },
+    }]).catch(console.error);
 
     revalidatePath("/dashboard/patient/appointments");
     return { success: "Review submitted successfully" };

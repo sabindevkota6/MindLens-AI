@@ -36,6 +36,22 @@ enum AdminAction {
   REVOKE_VERIFICATION
 }
 
+enum NotificationType {
+  APPOINTMENT_BOOKED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_ADJUSTED
+  APPOINTMENT_COMPLETED
+  APPOINTMENT_REMINDER
+  REVIEW_RECEIVED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  VERIFICATION_REVOKED
+  ACCOUNT_BANNED
+  ACCOUNT_UNBANNED
+  ACCOUNT_SUSPENDED
+  ACCOUNT_UNSUSPENDED
+}
+
 // user model
 model User {
   id            String    @id @default(cuid())
@@ -63,6 +79,7 @@ model User {
 
   adminActionsPerformed AdminActionLog[] @relation("AdminPerformer")
   adminActionsReceived  AdminActionLog[] @relation("AdminTarget")
+  notifications         Notification[]
 }
 
 // profiles
@@ -241,6 +258,22 @@ model AdminActionLog {
 
   @@index([targetUserId])
   @@index([adminUserId])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String           @db.Text
+  data      Json?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, read])
 }
 
 // singleton row for platform-wide configuration — created on first read with defaults

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { CounselorProfileSchema, CounselorOnboardingSchema } from "@/lib/schemas";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { createNotifications } from "@/lib/notifications";
 
 // get counselor profile data
 export const getCounselorProfile = async () => {
@@ -619,6 +620,7 @@ export const bookAppointment = async (slotId: string) => {
             include: {
                 counselor: {
                     select: {
+                        userId: true,
                         fullName: true,
                         professionalTitle: true,
                         user: { select: { email: true } },
@@ -737,6 +739,24 @@ export const bookAppointment = async (slotId: string) => {
                     meetingLink: inAppMeetingUrl,
                 }),
             }).catch(console.error);
+
+            // in-app notifications for both parties
+            createNotifications([
+                {
+                    userId: patientProfile.userId,
+                    type: "APPOINTMENT_BOOKED",
+                    title: "Appointment Confirmed",
+                    body: `Your session with ${slot.counselor.fullName} is set for ${dateStr} at ${timeStr}.`,
+                    data: { href: `/dashboard/patient/appointments/${appointmentId}` },
+                },
+                {
+                    userId: slot.counselor.userId,
+                    type: "APPOINTMENT_BOOKED",
+                    title: "New Appointment Booked",
+                    body: `${patientProfile.fullName} booked a session with you for ${dateStr} at ${timeStr}.`,
+                    data: { href: `/dashboard/counselor/appointments/${appointmentId}` },
+                },
+            ]).catch(console.error);
         }
 
         revalidatePath("/dashboard/patient");

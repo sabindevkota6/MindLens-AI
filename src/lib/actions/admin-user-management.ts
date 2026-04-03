@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 import { format } from "date-fns";
 import {
   patientSuspendedEmail,
@@ -695,6 +696,13 @@ export async function adminBanUser(
     html: emailHtml,
   }).catch(console.error);
 
+  createNotification({
+    userId: targetUserId,
+    type: "ACCOUNT_BANNED",
+    title: "Account Banned",
+    body: `Your account has been banned. Reason: ${reason.trim()}`,
+  }).catch(console.error);
+
   revalidateUserPaths(targetUserId);
   return { success: true };
 }
@@ -741,6 +749,13 @@ export async function adminUnbanUser(
     to: user.email,
     subject: "Your MindLens AI account has been reinstated",
     html: emailHtml,
+  }).catch(console.error);
+
+  createNotification({
+    userId: targetUserId,
+    type: "ACCOUNT_UNBANNED",
+    title: "Account Reinstated",
+    body: "Your account ban has been lifted. You can now access MindLens AI.",
   }).catch(console.error);
 
   revalidateUserPaths(targetUserId);
@@ -807,6 +822,13 @@ export async function adminSuspendUser(
     html: emailHtml,
   }).catch(console.error);
 
+  createNotification({
+    userId: targetUserId,
+    type: "ACCOUNT_SUSPENDED",
+    title: "Account Suspended",
+    body: `Your account has been suspended until ${untilStr}. Reason: ${reason.trim()}`,
+  }).catch(console.error);
+
   revalidateUserPaths(targetUserId);
   return { success: true };
 }
@@ -855,6 +877,13 @@ export async function adminUnsuspendUser(
     html: emailHtml,
   }).catch(console.error);
 
+  createNotification({
+    userId: targetUserId,
+    type: "ACCOUNT_UNSUSPENDED",
+    title: "Suspension Lifted",
+    body: "Your account suspension has been lifted. Welcome back to MindLens AI.",
+  }).catch(console.error);
+
   revalidateUserPaths(targetUserId);
   return { success: true };
 }
@@ -897,6 +926,14 @@ export async function adminVerifyCounselor(
       <p>Your professional verification on MindLens AI is <strong>approved</strong>. Patients can now find you in the directory and book sessions.</p>
       <p><a href="${base}/dashboard/counselor">Open your dashboard</a></p>
     `.trim(),
+  }).catch(console.error);
+
+  createNotification({
+    userId: profile.user.id,
+    type: "VERIFICATION_APPROVED",
+    title: "Verification Approved",
+    body: "Your professional verification has been approved. Patients can now find and book sessions with you.",
+    data: { href: "/dashboard/counselor/profile" },
   }).catch(console.error);
 
   revalidatePath("/dashboard/admin/users/counselors");
@@ -944,6 +981,14 @@ export async function adminRevokeCounselorVerification(
       <p>Your professional verification on MindLens AI has been revoked by an administrator. Please re-upload your documents for re-review.</p>
       <p><a href="${base}/dashboard/counselor/onboarding?step=3">Upload document</a></p>
     `.trim(),
+  }).catch(console.error);
+
+  createNotification({
+    userId: profile.user.id,
+    type: "VERIFICATION_REVOKED",
+    title: "Verification Revoked",
+    body: "Your professional verification has been revoked. Please re-upload your documents for re-review.",
+    data: { href: "/dashboard/counselor/profile" },
   }).catch(console.error);
 
   revalidatePath("/dashboard/admin/users/counselors");
