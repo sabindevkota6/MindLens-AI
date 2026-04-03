@@ -37,6 +37,8 @@ import {
 
 import { register as registerAction } from "@/lib/actions/auth";
 import { RegisterSchema } from "@/lib/schemas";
+import { GoogleIcon } from "@/components/auth/google-icon";
+import { signIn } from "next-auth/react";
 
 type RegisterFormValues = z.infer<typeof RegisterSchema>;
 
@@ -162,6 +164,23 @@ export default function RegisterPage() {
           <div className="text-center mb-4">
             <h2 className="text-2xl font-medium md:font-bold text-gray-900 mb-1">Sign Up</h2>
             <p className="text-gray-400 text-sm">Create your account to get started</p>
+          </div>
+
+          {/* google sign-up */}
+          <button
+            type="button"
+            onClick={() => signIn("google", { callbackUrl: "/dashboard/patient" })}
+            className="w-full flex items-center justify-center gap-3 h-10 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors mb-3"
+          >
+            <GoogleIcon className="w-5 h-5" />
+            Sign up with Google
+          </button>
+
+          {/* divider */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-xs text-gray-400">or sign up with email</span>
+            <div className="flex-1 h-px bg-gray-100" />
           </div>
 
           {/* show error */}

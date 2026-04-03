@@ -5,6 +5,7 @@ declare module "next-auth" {
     role?: string;
     id?: string;
     isOnboarded?: boolean;
+    needsRoleSetup?: boolean;
     image?: string | null;
   }
   interface Session {
@@ -12,6 +13,7 @@ declare module "next-auth" {
       role: string;
       id: string;
       isOnboarded?: boolean;
+      needsRoleSetup?: boolean;
       image?: string | null;
     };
   }
@@ -22,6 +24,7 @@ declare module "next-auth/jwt" {
     role?: string;
     id?: string;
     isOnboarded?: boolean;
+    needsRoleSetup?: boolean;
     // note: nextauth already declares `picture` on jwt — no need to redeclare
   }
 }

@@ -45,10 +45,16 @@ export default auth((req) => {
 
   const isLoggedIn = !!req.auth;
   const userRole = req.auth?.user?.role as string | undefined;
+  const needsRoleSetup = req.auth?.user?.needsRoleSetup;
 
-  // allow nextauth api routes
+  // allow nextauth api routes — must be first so oauth callbacks are never blocked
   if (pathname.startsWith(apiAuthPrefix)) {
     return;
+  }
+
+  // redirect new oauth users to /setup until they pick a role
+  if (isLoggedIn && needsRoleSetup && pathname !== "/setup") {
+    return Response.redirect(new URL("/setup", nextUrl));
   }
 
   // handle login/register pages

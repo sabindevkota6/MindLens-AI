@@ -8,6 +8,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getSession, signIn } from "next-auth/react";
+import { GoogleIcon } from "@/components/auth/google-icon";
 import {
   Mail,
   Lock,
@@ -185,6 +186,23 @@ export default function LoginPage() {
           <div className="text-center mb-6">
             <h2 className="text-2xl font-medium md:font-bold text-gray-900 mb-1">Login</h2>
             <p className="text-gray-400 text-sm">Enter your credentials to access your account</p>
+          </div>
+
+          {/* google sign-in */}
+          <button
+            type="button"
+            onClick={() => signIn("google", { callbackUrl: "/dashboard/patient" })}
+            className="w-full flex items-center justify-center gap-3 h-10 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-colors mb-4"
+          >
+            <GoogleIcon className="w-5 h-5" />
+            Continue with Google
+          </button>
+
+          {/* divider */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-gray-100" />
+            <span className="text-xs text-gray-400">or</span>
+            <div className="flex-1 h-px bg-gray-100" />
           </div>
 
           {/* show error */}
