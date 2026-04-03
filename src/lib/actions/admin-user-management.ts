@@ -134,6 +134,7 @@ export type AdminCounselorListItem = {
   userId: string;
   fullName: string;
   email: string;
+  image: string | null;
   professionalTitle: string | null;
   experienceYears: number;
   hourlyRate: number;
@@ -207,6 +208,7 @@ export async function searchAdminCounselors(
           select: {
             id: true,
             email: true,
+            image: true,
             isBanned: true,
             isSuspended: true,
             suspendedUntil: true,
@@ -246,6 +248,7 @@ export async function searchAdminCounselors(
       userId: r.user.id,
       fullName: r.fullName,
       email: r.user.email,
+      image: r.user.image ?? null,
       professionalTitle: r.professionalTitle,
       experienceYears: r.experienceYears,
       hourlyRate: Number(r.hourlyRate),
@@ -286,6 +289,7 @@ export type AdminPatientListItem = {
   userId: string;
   fullName: string;
   email: string;
+  image: string | null;
   bio: string | null;
   isSuspended: boolean;
   suspendedUntil: string | null;
@@ -344,6 +348,7 @@ export async function searchAdminPatients(
           select: {
             id: true,
             email: true,
+            image: true,
             isBanned: true,
             isSuspended: true,
             suspendedUntil: true,
@@ -365,6 +370,7 @@ export async function searchAdminPatients(
     userId: r.user.id,
     fullName: r.fullName,
     email: r.user.email,
+    image: r.user.image ?? null,
     bio: r.bio,
     isSuspended: r.user.isSuspended,
     suspendedUntil: r.user.suspendedUntil ? r.user.suspendedUntil.toISOString() : null,
@@ -386,6 +392,7 @@ export type AdminCounselorDetail = {
   userId: string;
   fullName: string;
   email: string;
+  image: string | null;
   phoneNumber: string | null;
   bio: string | null;
   professionalTitle: string | null;
@@ -425,6 +432,7 @@ export async function getAdminCounselorDetail(
         select: {
           id: true,
           email: true,
+          image: true,
           phoneNumber: true,
           isBanned: true,
           isSuspended: true,
@@ -479,6 +487,7 @@ export async function getAdminCounselorDetail(
     userId: profile.user.id,
     fullName: profile.fullName,
     email: profile.user.email,
+    image: profile.user.image ?? null,
     phoneNumber: profile.user.phoneNumber,
     bio: profile.bio,
     professionalTitle: profile.professionalTitle,
@@ -526,6 +535,7 @@ export type AdminPatientDetail = {
   userId: string;
   fullName: string;
   email: string;
+  image: string | null;
   phoneNumber: string | null;
   bio: string | null;
   dateOfBirth: string | null;
@@ -558,6 +568,7 @@ export async function getAdminPatientDetail(
         select: {
           id: true,
           email: true,
+          image: true,
           phoneNumber: true,
           isBanned: true,
           isSuspended: true,
@@ -599,6 +610,7 @@ export async function getAdminPatientDetail(
     userId: profile.user.id,
     fullName: profile.fullName,
     email: profile.user.email,
+    image: profile.user.image ?? null,
     phoneNumber: profile.user.phoneNumber,
     bio: profile.bio,
     dateOfBirth: profile.dateOfBirth?.toISOString() ?? null,

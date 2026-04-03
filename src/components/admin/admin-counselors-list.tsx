@@ -267,9 +267,17 @@ export function AdminCounselorsList({ initialData, initialParams }: AdminCounsel
                         {c.isBanned ? "Banned" : "Suspended"}
                       </div>
                     )}
-                    <div className={cn("w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold ring-4 ring-white", avatar.bg, avatar.text)}>
-                      {getInitials(c.fullName)}
-                    </div>
+                    {c.image ? (
+                      <img
+                        src={c.image}
+                        alt={c.fullName}
+                        className="w-16 h-16 rounded-full object-cover ring-4 ring-white"
+                      />
+                    ) : (
+                      <div className={cn("w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold ring-4 ring-white", avatar.bg, avatar.text)}>
+                        {getInitials(c.fullName)}
+                      </div>
+                    )}
                   </div>
 
                   <div className="px-4 pt-3 pb-4 space-y-2">

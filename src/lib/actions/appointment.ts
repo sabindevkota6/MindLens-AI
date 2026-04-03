@@ -164,7 +164,7 @@ export const getAppointmentDetail = async (appointmentId: string) => {
                     userId: true,
                     bio: true,
                     dateOfBirth: true,
-                    user: { select: { email: true, createdAt: true } },
+                    user: { select: { email: true, createdAt: true, image: true } },
                 },
             },
             counselor: {
@@ -176,7 +176,7 @@ export const getAppointmentDetail = async (appointmentId: string) => {
                     bio: true,
                     experienceYears: true,
                     hourlyRate: true,
-                    user: { select: { email: true, createdAt: true } },
+                    user: { select: { email: true, createdAt: true, image: true } },
                     specialties: {
                         include: { specialty: true },
                     },
@@ -238,6 +238,7 @@ export const getAppointmentDetail = async (appointmentId: string) => {
             id: appointment.patient.id,
             fullName: appointment.patient.fullName,
             email: appointment.patient.user.email,
+            image: appointment.patient.user.image ?? null,
             bio: appointment.patient.bio,
             dateOfBirth: appointment.patient.dateOfBirth,
             memberSince: appointment.patient.user.createdAt,
@@ -247,6 +248,7 @@ export const getAppointmentDetail = async (appointmentId: string) => {
             fullName: appointment.counselor.fullName,
             professionalTitle: appointment.counselor.professionalTitle,
             email: appointment.counselor.user.email,
+            image: appointment.counselor.user.image ?? null,
             bio: appointment.counselor.bio,
             experienceYears: appointment.counselor.experienceYears,
             hourlyRate: Number(appointment.counselor.hourlyRate),

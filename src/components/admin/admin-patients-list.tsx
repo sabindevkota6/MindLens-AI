@@ -238,9 +238,17 @@ export function AdminPatientsList({ initialData, initialParams }: AdminPatientsL
                 <CardContent className="p-4 space-y-3">
                   {/* avatar + name row */}
                   <div className="flex items-center gap-3">
-                    <div className={cn("w-12 h-12 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0", avatar.bg, avatar.text)}>
-                      {getInitials(p.fullName)}
-                    </div>
+                    {p.image ? (
+                      <img
+                        src={p.image}
+                        alt={p.fullName}
+                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className={cn("w-12 h-12 rounded-full flex items-center justify-center text-base font-bold flex-shrink-0", avatar.bg, avatar.text)}>
+                        {getInitials(p.fullName)}
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-sm text-gray-900 truncate group-hover:text-primary transition-colors">{p.fullName}</p>
                       <p className="text-xs text-gray-400 truncate">{p.email}</p>

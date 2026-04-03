@@ -23,7 +23,6 @@ import {
   Mail,
   Briefcase,
   DollarSign,
-  User,
   Award,
   BookOpen,
 } from "lucide-react";
@@ -60,6 +59,7 @@ export type AppointmentDetail = {
     id: string;
     fullName: string;
     email: string;
+    image: string | null;
     bio: string | null;
     dateOfBirth: Date | null;
     memberSince: Date;
@@ -69,6 +69,7 @@ export type AppointmentDetail = {
     fullName: string;
     professionalTitle: string | null;
     email: string;
+    image: string | null;
     bio: string | null;
     experienceYears: number;
     hourlyRate: number;
@@ -272,9 +273,22 @@ export function AppointmentDetailView({ appointment, role }: AppointmentDetailVi
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {/* Avatar header */}
             <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-6 text-center">
-              <div className="w-20 h-20 mx-auto rounded-full bg-primary/15 flex items-center justify-center mb-3">
-                <User className="w-10 h-10 text-primary" />
-              </div>
+              {(() => {
+                const profileImage = isPatient ? counselor.image : patient.image;
+                const profileName = isPatient ? counselor.fullName : patient.fullName;
+                const initials = profileName.split(" ").filter(Boolean).map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+                return profileImage ? (
+                  <img
+                    src={profileImage}
+                    alt={profileName}
+                    className="w-20 h-20 mx-auto rounded-full object-cover mb-3 ring-4 ring-white shadow-sm"
+                  />
+                ) : (
+                  <div className="w-20 h-20 mx-auto rounded-full bg-primary/15 flex items-center justify-center mb-3">
+                    <span className="text-2xl font-bold text-primary">{initials}</span>
+                  </div>
+                );
+              })()}
               <h2 className="text-lg font-bold text-gray-900">
                 {isPatient ? counselor.fullName : patient.fullName}
               </h2>

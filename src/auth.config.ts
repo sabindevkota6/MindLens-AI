@@ -36,8 +36,10 @@ export const authConfig = {
         session.user.id = token.id as string;
         session.user.isOnboarded = token.isOnboarded as boolean;
         // propagate token.picture to session.user.image so all client components see it
+        // keep null (removed photo) — do not coalesce null to undefined or clients fall back to stale props
         if (token.picture !== undefined) {
-          session.user.image = (token.picture as string | null) ?? undefined;
+          session.user.image =
+            token.picture === null ? null : (token.picture as string);
         }
       }
       return session;

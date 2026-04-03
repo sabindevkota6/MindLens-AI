@@ -136,9 +136,17 @@ export default async function AdminCounselorDetailPage({ params }: PageProps) {
             </Link>
             <div className="flex flex-col md:flex-row md:items-start gap-6">
               {/* avatar */}
-              <div className={cn("w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold flex-shrink-0 ring-4 ring-white/20", avatarColor)}>
-                {initials}
-              </div>
+              {c.image ? (
+                <img
+                  src={c.image}
+                  alt={c.fullName}
+                  className="w-20 h-20 rounded-2xl object-cover flex-shrink-0 ring-4 ring-white/20 shadow-sm"
+                />
+              ) : (
+                <div className={cn("w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold flex-shrink-0 ring-4 ring-white/20", avatarColor)}>
+                  {initials}
+                </div>
+              )}
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{c.fullName}</h1>

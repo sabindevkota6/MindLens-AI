@@ -71,6 +71,13 @@ function formatFileSize(bytes: number): string {
   return `${Math.round(bytes / 1024)} KB`;
 }
 
+/** Empty / whitespace URLs must become null so we never pass src="" to AvatarImage (React warns). */
+function normalizeProfileImageUrl(url: string | null | undefined): string | null {
+  if (url == null) return null;
+  const t = url.trim();
+  return t.length > 0 ? t : null;
+}
+
 // ─── component ────────────────────────────────────────────────────────────────
 
 export function ProfileAvatarUpload({
@@ -81,7 +88,13 @@ export function ProfileAvatarUpload({
   onRemoveComplete,
 }: ProfileAvatarUploadProps) {
   const { data: sessionData, update: updateSession } = useSession();
-  const liveImage = sessionData?.user?.image ?? currentImage ?? null;
+  // only fall back to server `currentImage` when session has no image field yet (undefined).
+  // null means "explicitly no photo" after removal — must not use ?? which treats null as missing.
+  const sessionImage = sessionData?.user?.image;
+  const liveImage = normalizeProfileImageUrl(
+    sessionImage !== undefined ? sessionImage : (currentImage ?? null)
+  );
+  const avatarSrc = liveImage ?? undefined;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -334,7 +347,7 @@ export function ProfileAvatarUpload({
             "ring-0 group-hover:ring-4 group-hover:ring-primary/20 transition-all duration-200"
           )}
         >
-          <AvatarImage src={liveImage || ""} alt="Profile picture" />
+          <AvatarImage src={avatarSrc} alt="Profile picture" />
           <AvatarFallback
             className={cn(
               "bg-primary/10 text-primary font-bold",
@@ -432,7 +445,7 @@ export function ProfileAvatarUpload({
                   </div>
                 ) : (
                   <Avatar className="w-40 h-40 ring-4 ring-gray-100 shadow-lg flex-shrink-0">
-                    <AvatarImage src={liveImage || ""} />
+                    <AvatarImage src={avatarSrc} />
                     <AvatarFallback className="bg-primary/10 text-primary text-4xl font-bold">
                       {initials}
                     </AvatarFallback>
@@ -522,7 +535,7 @@ export function ProfileAvatarUpload({
                 )}
 
                 {/* remove link — only when user already has a profile picture */}
-                {(liveImage || currentImage) && !uploading && (
+                {liveImage && !uploading && (
                   <button
                     onClick={handleRemove}
                     disabled={isBusy}

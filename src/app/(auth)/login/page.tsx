@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { getSession, signIn } from "next-auth/react";
 import {
   Mail,
   Lock,
@@ -26,12 +28,25 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 
-import { login } from "@/lib/actions/login";
 import { LoginSchema } from "@/lib/schemas";
 
 type LoginFormValues = z.infer<typeof LoginSchema>;
 
+function dashboardPathForRole(role: string | undefined) {
+  if (role === "COUNSELOR") return "/dashboard/counselor";
+  if (role === "ADMIN") return "/dashboard/admin";
+  return "/dashboard/patient";
+}
+
+function safeRelativeCallbackUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const raw = new URLSearchParams(window.location.search).get("callbackUrl");
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
+
 export default function LoginPage() {
+  const router = useRouter();
   const [error, setError] = useState<string>();
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
@@ -48,13 +63,32 @@ export default function LoginPage() {
     setError(undefined);
 
     startTransition(async () => {
-      const data = await login(values);
-      if (data?.fieldErrors) {
-        // show all errors at top
-        setError(Object.values(data.fieldErrors).filter(Boolean).join(" | "));
-      } else if (data?.error) {
-        setError(data.error);
+      const parsed = LoginSchema.safeParse(values);
+      if (!parsed.success) {
+        const fieldErrors = parsed.error.flatten().fieldErrors;
+        setError(Object.values(fieldErrors).filter(Boolean).join(" | "));
+        return;
       }
+
+      const { email, password } = parsed.data;
+
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (!result?.ok || result.error) {
+        setError("Invalid email or password");
+        return;
+      }
+
+      router.refresh();
+      const session = await getSession();
+      const next =
+        safeRelativeCallbackUrl() ??
+        dashboardPathForRole(session?.user?.role as string | undefined);
+      router.replace(next);
     });
   };
 

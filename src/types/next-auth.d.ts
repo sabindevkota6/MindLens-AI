@@ -5,14 +5,14 @@ declare module "next-auth" {
     role?: string;
     id?: string;
     isOnboarded?: boolean;
-    image?: string;
+    image?: string | null;
   }
   interface Session {
     user: User & {
       role: string;
       id: string;
       isOnboarded?: boolean;
-      image?: string;
+      image?: string | null;
     };
   }
 }

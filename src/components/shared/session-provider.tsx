@@ -2,7 +2,10 @@
 
 import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
 
-// small client wrapper so SessionProvider can be used inside the server root layout
-export function SessionProvider({ children }: { children: React.ReactNode }) {
+type Props = {
+  children: React.ReactNode;
+};
+
+export function SessionProvider({ children }: Props) {
   return <NextAuthSessionProvider>{children}</NextAuthSessionProvider>;
 }
