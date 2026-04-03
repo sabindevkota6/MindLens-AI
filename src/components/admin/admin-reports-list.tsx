@@ -40,19 +40,7 @@ import { cn } from "@/lib/utils";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
-function getAvatarColor(name: string) {
-  const colors = [
-    { bg: "bg-blue-100", text: "text-blue-700" },
-    { bg: "bg-violet-100", text: "text-violet-700" },
-    { bg: "bg-emerald-100", text: "text-emerald-700" },
-    { bg: "bg-rose-100", text: "text-rose-700" },
-    { bg: "bg-amber-100", text: "text-amber-700" },
-    { bg: "bg-slate-100", text: "text-slate-700" },
-  ];
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return colors[Math.abs(h) % colors.length];
-}
+const avatarColor = { bg: "bg-primary/10", text: "text-primary" };
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -81,7 +69,7 @@ function AtRiskRow({
   patient: AtRiskPatient;
   tier: "high" | "warning";
 }) {
-  const avatar = getAvatarColor(patient.fullName);
+  const avatar = avatarColor;
   const indicatorColor = tier === "high" ? "bg-red-400" : "bg-amber-400";
 
   return (
@@ -360,7 +348,7 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
         <Card className="border-0 shadow-sm overflow-hidden">
           <CardContent className="p-0 divide-y divide-gray-50">
             {reports.map((r, i) => {
-              const avatar = getAvatarColor(r.patientName);
+              const avatar = avatarColor;
               return (
                 <div
                   key={r.reportId}

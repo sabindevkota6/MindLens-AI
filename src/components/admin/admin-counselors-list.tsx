@@ -35,20 +35,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// generate initials avatar color consistently from name
-function getAvatarColor(name: string) {
-  const colors = [
-    { bg: "bg-teal-100", text: "text-teal-700" },
-    { bg: "bg-blue-100", text: "text-blue-700" },
-    { bg: "bg-violet-100", text: "text-violet-700" },
-    { bg: "bg-emerald-100", text: "text-emerald-700" },
-    { bg: "bg-amber-100", text: "text-amber-700" },
-    { bg: "bg-cyan-100", text: "text-cyan-700" },
-  ];
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return colors[Math.abs(h) % colors.length];
-}
+const avatarColor = { bg: "bg-primary/10", text: "text-primary" };
 
 function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -242,7 +229,7 @@ export function AdminCounselorsList({ initialData, initialParams }: AdminCounsel
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {counselors.map((c, i) => {
-            const avatar = getAvatarColor(c.fullName);
+            const avatar = avatarColor;
             return (
               <Card
                 key={c.id}

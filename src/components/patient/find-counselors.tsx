@@ -164,22 +164,7 @@ export function FindCounselors() {
       .slice(0, 2);
   };
 
-  // Generate a consistent avatar color from counselor name
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      { bg: "bg-blue-100", ring: "ring-blue-200", text: "text-blue-600" },
-      { bg: "bg-emerald-100", ring: "ring-emerald-200", text: "text-emerald-600" },
-      { bg: "bg-slate-100", ring: "ring-slate-200", text: "text-slate-600" },
-      { bg: "bg-violet-100", ring: "ring-violet-200", text: "text-violet-600" },
-      { bg: "bg-amber-100", ring: "ring-amber-200", text: "text-amber-600" },
-      { bg: "bg-cyan-100", ring: "ring-cyan-200", text: "text-cyan-600" },
-    ];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
-  };
+  const avatarColor = { bg: "bg-primary/10", ring: "ring-primary/20", text: "text-primary" };
 
   const formatNextAvailable = (dateStr: string | null) => {
     if (!dateStr) return null;
@@ -482,7 +467,6 @@ export function FindCounselors() {
         ) : (
           <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {counselors.map((counselor) => {
-              const avatarColor = getAvatarColor(counselor.fullName);
               const availability = formatNextAvailable(counselor.nextAvailable);
 
               return (

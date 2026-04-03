@@ -104,18 +104,8 @@ export default async function AdminCounselorDetailPage({ params }: PageProps) {
 
   const c = data;
 
-  // avatar initials + color — consistent with patient browse view
   const initials = c.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-  const avatarColors = [
-    "bg-teal-100 text-teal-700",
-    "bg-blue-100 text-blue-700",
-    "bg-violet-100 text-violet-700",
-    "bg-emerald-100 text-emerald-700",
-    "bg-amber-100 text-amber-700",
-  ];
-  let hash = 0;
-  for (let i = 0; i < c.fullName.length; i++) hash = c.fullName.charCodeAt(i) + ((hash << 5) - hash);
-  const avatarColor = avatarColors[Math.abs(hash) % avatarColors.length];
+  const avatarColor = "bg-primary/10 text-primary";
 
   const completionRate = c.totalAppointments > 0
     ? Math.round((c.completedAppointments / c.totalAppointments) * 100)

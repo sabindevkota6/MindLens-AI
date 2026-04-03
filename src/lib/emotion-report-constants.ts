@@ -68,24 +68,14 @@ export const EMOTION_MESSAGES: Record<
   },
 };
 
-/** tailwind class triplets for web counselor avatars */
+/** tailwind class triplets for web counselor avatars — single brand color for consistency */
 export const AVATAR_TAILWIND = [
-  { bg: "bg-blue-100", ring: "ring-blue-200", text: "text-blue-600" },
-  { bg: "bg-emerald-100", ring: "ring-emerald-200", text: "text-emerald-600" },
-  { bg: "bg-slate-100", ring: "ring-slate-200", text: "text-slate-600" },
-  { bg: "bg-violet-100", ring: "ring-violet-200", text: "text-violet-600" },
-  { bg: "bg-amber-100", ring: "ring-amber-200", text: "text-amber-600" },
-  { bg: "bg-cyan-100", ring: "ring-cyan-200", text: "text-cyan-600" },
+  { bg: "bg-primary/10", ring: "ring-primary/20", text: "text-primary" },
 ] as const;
 
-/** hex pairs for PDF counselor avatar circles */
+/** hex pairs for PDF counselor avatar circles — brand teal */
 export const AVATAR_PDF_HEX = [
-  { bg: "#dbeafe", text: "#2563eb" },
-  { bg: "#d1fae5", text: "#059669" },
-  { bg: "#e2e8f0", text: "#475569" },
-  { bg: "#ede9fe", text: "#7c3aed" },
-  { bg: "#fef3c7", text: "#d97706" },
-  { bg: "#cffafe", text: "#0891b2" },
+  { bg: "#e0f2f1", text: "#00796B" },
 ] as const;
 
 export function hashNameToIndex(name: string, modulo: number): number {
