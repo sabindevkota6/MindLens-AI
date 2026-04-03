@@ -265,8 +265,9 @@ export default function RegisterPage() {
                         <Input
                           type={showPassword ? "text" : "password"}
                           placeholder="Create a password"
-                          className="pl-11 pr-11 h-10 bg-white border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal"
+                          className="hide-native-password-reveal pl-11 pr-11 h-10 bg-white border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal"
                           {...field}
+                          autoComplete="new-password"
                         />
                         <button
                           type="button"
@@ -298,8 +299,9 @@ export default function RegisterPage() {
                         <Input
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirm your password"
-                          className="pl-11 pr-11 h-10 bg-white border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal"
+                          className="hide-native-password-reveal pl-11 pr-11 h-10 bg-white border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal"
                           {...field}
+                          autoComplete="new-password"
                         />
                         <button
                           type="button"

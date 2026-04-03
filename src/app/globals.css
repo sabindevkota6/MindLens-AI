@@ -99,4 +99,10 @@ html {
   body {
     @apply bg-background text-foreground;
   }
+
+  /* hide the native controls to avoid double icons. */
+  .hide-native-password-reveal::-ms-reveal,
+  .hide-native-password-reveal::-ms-clear {
+    display: none;
+  }
 }

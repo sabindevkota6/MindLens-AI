@@ -235,8 +235,9 @@ export default function LoginPage() {
                         <Input
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
-                          className="pl-11 pr-11 h-10 bg-white border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal"
+                          className="hide-native-password-reveal pl-11 pr-11 h-10 bg-white border-gray-200 rounded-xl text-gray-700 placeholder:text-gray-400 focus:border-brand-teal focus:ring-1 focus:ring-brand-teal"
                           {...field}
+                          autoComplete="current-password"
                         />
                         <button
                           type="button"
