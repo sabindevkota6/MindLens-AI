@@ -123,7 +123,7 @@ export default async function AdminVerificationDetailPage({
                     Rate / experience
                   </dt>
                   <dd className="text-gray-900">
-                    ${data.hourlyRate.toFixed(2)}/hr · {data.experienceYears}{" "}
+                    Rs. {Number(data.hourlyRate).toLocaleString()}/hr · {data.experienceYears}{" "}
                     years
                   </dd>
                 </div>

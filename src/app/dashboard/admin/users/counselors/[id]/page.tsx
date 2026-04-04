@@ -263,7 +263,7 @@ export default async function AdminCounselorDetailPage({ params }: PageProps) {
                   <Separator />
                   <div className="flex justify-between">
                     <span className="text-gray-400">Hourly Rate</span>
-                    <span className="font-medium text-gray-700">${c.hourlyRate.toFixed(2)}/hr</span>
+                    <span className="font-medium text-gray-700">Rs. {Number(c.hourlyRate).toLocaleString()}/hr</span>
                   </div>
                   {c.bio && (
                     <>

@@ -119,7 +119,7 @@ export default async function AdminVerificationQueuePage() {
                             {c.experienceYears} yrs
                           </span>
                           <span className="hidden sm:inline text-gray-300">·</span>
-                          <span>${c.hourlyRate.toFixed(2)}/hr</span>
+                          <span>Rs. {Number(c.hourlyRate).toLocaleString()}/hr</span>
                           <span className="hidden sm:inline text-gray-300">·</span>
                           <span className="inline-flex items-center gap-1">
                             <FileWarning className="h-3.5 w-3.5 text-gray-400" />
