@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { bookAppointment } from "@/lib/actions/counselor";
 import { EMOTION_COLORS, EMOTION_LIGHT_BG } from "@/lib/emotion-report-constants";
 import { EmotionReportPicker } from "@/components/patient/emotion-report-picker";
 import {
@@ -17,7 +16,6 @@ import {
   BarChart3,
   Paperclip,
   X,
-  Loader2,
   ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,22 +29,19 @@ type EmotionLogSummary = {
 interface PreSessionDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  slotId: string;
   counselorName: string;
-  onBookingResult: (result: { success?: string; error?: string }) => void;
+  onProceedToPayment: (data: { medicalConcern?: string; emotionLogId?: string }) => void;
 }
 
 export function PreSessionDetailsDialog({
   open,
   onOpenChange,
-  slotId,
   counselorName,
-  onBookingResult,
+  onProceedToPayment,
 }: PreSessionDetailsDialogProps) {
   const [medicalConcern, setMedicalConcern] = useState("");
   const [selectedEmotionLog, setSelectedEmotionLog] = useState<EmotionLogSummary | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
 
   // reset fields whenever the dialog opens fresh
   useEffect(() => {
@@ -56,19 +51,16 @@ export function PreSessionDetailsDialog({
     }
   }, [open]);
 
-  const submitBooking = (skipOptionals: boolean) => {
-    startTransition(async () => {
-      const concern = skipOptionals ? undefined : (medicalConcern.trim() || undefined);
-      const emotionLogId = skipOptionals ? undefined : selectedEmotionLog?.id;
-      const result = await bookAppointment(slotId, concern, emotionLogId);
-      onOpenChange(false);
-      onBookingResult(result);
-    });
+  const handleProceed = (skipOptionals: boolean) => {
+    const concern = skipOptionals ? undefined : (medicalConcern.trim() || undefined);
+    const emotionLogId = skipOptionals ? undefined : selectedEmotionLog?.id;
+    onOpenChange(false);
+    onProceedToPayment({ medicalConcern: concern, emotionLogId });
   };
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(v) => !isPending && onOpenChange(v)}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
 
           {/* compact horizontal header */}
@@ -197,32 +189,18 @@ export function PreSessionDetailsDialog({
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn(
-                  "text-gray-500 hover:text-gray-700 px-4",
-                  isPending && "opacity-50 pointer-events-none"
-                )}
-                onClick={() => submitBooking(true)}
-                disabled={isPending}
+                className="text-gray-500 hover:text-gray-700 px-4"
+                onClick={() => handleProceed(true)}
               >
-                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Skip & Book"}
+                Skip to Payment
               </Button>
               <Button
                 size="sm"
                 className="gap-1.5 px-5"
-                onClick={() => submitBooking(false)}
-                disabled={isPending}
+                onClick={() => handleProceed(false)}
               >
-                {isPending ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Booking...
-                  </>
-                ) : (
-                  <>
-                    Confirm Booking
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </>
-                )}
+                Continue to Payment
+                <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </div>
           </div>

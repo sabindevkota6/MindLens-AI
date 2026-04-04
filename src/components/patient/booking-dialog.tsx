@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PreSessionDetailsDialog } from "@/components/patient/pre-session-details-dialog";
+import { PaymentDialog } from "@/components/patient/payment-dialog";
 import {
   ChevronLeft,
   ChevronRight,
@@ -57,6 +58,11 @@ export function BookingDialog({
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [result, setResult] = useState<{ success?: string; error?: string } | null>(null);
   const [preSessionOpen, setPreSessionOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [pendingPreSessionData, setPendingPreSessionData] = useState<{
+    medicalConcern?: string;
+    emotionLogId?: string;
+  } | null>(null);
 
   const fetchAvailableDates = useCallback(async () => {
     setLoadingDates(true);
@@ -86,8 +92,14 @@ export function BookingDialog({
     });
   }, [selectedDate, counselorId]);
 
-  // called by the pre-session dialog after booking completes
-  const handleBookingResult = async (res: { success?: string; error?: string }) => {
+  // called when pre-session step is done — stores optional data and opens payment dialog
+  const handleProceedToPayment = (data: { medicalConcern?: string; emotionLogId?: string }) => {
+    setPendingPreSessionData(data);
+    setPaymentOpen(true);
+  };
+
+  // called by payment dialog after payment completes or fails
+  const handlePaymentResult = async (res: { success?: string; error?: string }) => {
     setResult(res);
     if (res.success && selectedDate) {
       const updated = await getCounselorAvailableSlots(counselorId, selectedDate.toISOString());
@@ -181,7 +193,7 @@ export function BookingDialog({
               </div>
 
               <p className="text-xs text-gray-400 mt-auto pt-4">
-                Meeting link will be provided upon confirmation.
+                Secure payment is the final step before your session is confirmed.
               </p>
             </div>
 
@@ -353,9 +365,21 @@ export function BookingDialog({
         <PreSessionDetailsDialog
           open={preSessionOpen}
           onOpenChange={setPreSessionOpen}
+          counselorName={counselorName}
+          onProceedToPayment={handleProceedToPayment}
+        />
+      )}
+
+      {selectedSlot && pendingPreSessionData !== null && (
+        <PaymentDialog
+          open={paymentOpen}
+          onOpenChange={setPaymentOpen}
           slotId={selectedSlot}
           counselorName={counselorName}
-          onBookingResult={handleBookingResult}
+          amountNpr={hourlyRate}
+          medicalConcern={pendingPreSessionData.medicalConcern}
+          emotionLogId={pendingPreSessionData.emotionLogId}
+          onPaymentResult={handlePaymentResult}
         />
       )}
     </>

@@ -12,7 +12,7 @@ interface SendEmailOptions {
 export async function sendEmail({ to, subject, html, attachments }: SendEmailOptions) {
   try {
     const { error } = await resend.emails.send({
-      from: "MindLens AI <onboarding@resend.dev>",
+      from: "MindLens AI <noreply@mindlensai.me>",
       to,
       subject,
       html,

@@ -20,7 +20,19 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum PaymentGateway {
+  KHALTI
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
 enum AppointmentStatus {
+  PAYMENT_PENDING
   SCHEDULED
   COMPLETED
   CANCELLED
@@ -205,6 +217,7 @@ model Appointment {
   attachedEmotionLog EmotionLog?       @relation(fields: [attachedEmotionLogId], references: [id], onDelete: SetNull)
   review             Review?
   reports            Report[]
+  payment            Payment?
   
   @@index([patientProfileId, status])
   @@index([counselorProfileId, status])
@@ -279,6 +292,25 @@ model Notification {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, read])
+}
+
+model Payment {
+  id              String          @id @default(cuid())
+  appointmentId   String          @unique
+  gateway         PaymentGateway
+  status          PaymentStatus   @default(PENDING)
+  amountNpr       Decimal         @db.Decimal(10, 2)
+  amountUsd       Decimal?        @db.Decimal(10, 2)
+  gatewayPidx     String?
+  gatewayOrderId  String?
+  gatewayTxnId    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  appointment     Appointment     @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([gatewayPidx])
+  @@index([gatewayOrderId])
 }
 
 // singleton row for platform-wide configuration — created on first read with defaults
