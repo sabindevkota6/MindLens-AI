@@ -15,9 +15,9 @@ export default async function PatientOnboardingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 pt-16">
       <div className="flex flex-1 flex-col items-center justify-center p-4 md:p-8">
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-2xl">
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
+        <div className="bg-white rounded-2xl shadow-lg p-8 md:p-10 space-y-6">
           <div className="text-center space-y-2">
             <div className="flex justify-center mb-4">
               <Image
