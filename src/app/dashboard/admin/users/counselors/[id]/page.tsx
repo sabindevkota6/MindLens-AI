@@ -105,7 +105,7 @@ export default async function AdminCounselorDetailPage({ params }: PageProps) {
   const c = data;
 
   const initials = c.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-  const avatarColor = "bg-primary/10 text-primary";
+  const avatarColor = "bg-white/20 text-white";
 
   const completionRate = c.totalAppointments > 0
     ? Math.round((c.completedAppointments / c.totalAppointments) * 100)

@@ -74,7 +74,7 @@ export default async function AdminPatientDetailPage({ params }: PageProps) {
   const p = data;
 
   const initials = p.fullName.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-  const avatarColor = "bg-primary/10 text-primary";
+  const avatarColor = "bg-white/20 text-white";
 
   const completionRate = p.totalAppointments > 0
     ? Math.round((p.completedAppointments / p.totalAppointments) * 100)
