@@ -7,27 +7,28 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-// s3 client using env credentials
+// s3 client for uploading counselor verification documents
 const s3 = new S3Client({
-    region: process.env.AWS_REGION!,
+    region: process.env.MY_AWS_REGION!,
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-        // session token needed for learner lab temporary credentials
-        sessionToken: process.env.AWS_SESSION_TOKEN,
+        accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY!,
+        // session token is required for learner lab temporary credentials
+        sessionToken: process.env.MY_AWS_SESSION_TOKEN,
     },
 });
 
-const BUCKET = process.env.AWS_BUCKET_NAME!;
+// s3 bucket name read from env so it can differ between environments
+const BUCKET = process.env.MY_AWS_BUCKET_NAME!;
 
-// generates a presigned put url so the client can upload directly to s3
+// generates a presigned put url so the counselor's browser can upload the document directly to s3
 export const getVerificationUploadUrl = async (contentType: string) => {
     const session = await auth();
     if (!session || session.user.role !== "COUNSELOR") {
         return { error: "Unauthorized" };
     }
 
-    // only allow pdf and image types
+    // only pdf and common image formats are accepted for verification documents
     const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
     if (!allowed.includes(contentType)) {
         return { error: "Invalid file type. Only PDF, JPG, and PNG are allowed." };
@@ -58,7 +59,7 @@ export const getVerificationUploadUrl = async (contentType: string) => {
     }
 };
 
-// saves the uploaded document url and sets verification status to pending
+// saves the uploaded document url to the database and resets verification status to pending
 export const submitVerificationRecord = async (fileKey: string) => {
     const session = await auth();
     if (!session || session.user.role !== "COUNSELOR") {
@@ -74,6 +75,7 @@ export const submitVerificationRecord = async (fileKey: string) => {
         return { error: "Profile not found" };
     }
 
+    // accept both the current nested key format and the older flat key format for backwards compatibility
     const nestedPrefix = `verifications/${profile.id}/`;
     const legacyFlatPrefix = `verifications/${session.user.id}-`;
     const isNestedKey = fileKey.startsWith(nestedPrefix);
@@ -83,8 +85,8 @@ export const submitVerificationRecord = async (fileKey: string) => {
         return { error: "Invalid document key" };
     }
 
-    // build the public s3 url from the bucket and key
-    const documentUrl = `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+    // build the public https url from the bucket name, region, and file key
+    const documentUrl = `https://${BUCKET}.s3.${process.env.MY_AWS_REGION}.amazonaws.com/${fileKey}`;
 
     try {
         await prisma.$transaction(async (tx) => {
@@ -95,7 +97,7 @@ export const submitVerificationRecord = async (fileKey: string) => {
                 },
             });
 
-            // set status back to pending after resubmission
+            // reset verification status to pending so admin reviews the new document
             await tx.counselorProfile.update({
                 where: { id: profile.id },
                 data: { verificationStatus: "PENDING", isOnboarded: true },

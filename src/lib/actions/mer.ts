@@ -24,11 +24,11 @@ const ALLOWED_CONTENT_TYPES = [
 
 // s3 client configured for aws learner lab
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION!,
+  region: process.env.MY_AWS_REGION!,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    sessionToken: process.env.AWS_SESSION_TOKEN!,
+    accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY!,
+    sessionToken: process.env.MY_AWS_SESSION_TOKEN!,
   },
 });
 
@@ -54,7 +54,7 @@ export async function getMerUploadUrl(contentType: string): Promise<
   const fileKey = `mer-videos/${session.user.id}-${Date.now()}`;
 
   const command = new PutObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME!,
+    Bucket: process.env.MY_AWS_BUCKET_NAME!,
     Key: fileKey,
     ContentType: contentType,
   });
@@ -86,8 +86,7 @@ const EMOTION_BUCKETS: Record<string, string[]> = {
     "Anxiety", "Fear", "Horror", "Nervousness", "Vulnerability"
   ],
   Sadness: [
-    // Tiredness is included here because emotional exhaustion/fatigue is a core sadness marker —
-    // sad people frequently appear tired on face analysis, so it belongs with sadness not neutral
+
     "Sadness", "Disappointment", "Grief", "Nostalgia", "Pain", "Empathic Pain", "Envy", "Tiredness"
   ],
   Anger: [
@@ -104,10 +103,7 @@ const EMOTION_BUCKETS: Record<string, string[]> = {
   Surprise: [
     "Surprise (positive)", "Surprise (negative)", "Awe", "Realization", "Excitement"
   ],
-  // Neutral is intentionally lean — only genuinely neutral/resting states belong here.
-  // Boredom (flat disengaged affect) and Contemplation (deep rumination) are moved to
-  // Confusion & Overwhelm because they commonly appear in sad/distressed people and
-  // would otherwise inflate the Neutral bucket in face analysis, masking real emotional signals.
+
   Neutral: [
     "Neutral", "Calmness", "Concentration", "Sleepiness"
   ],
@@ -117,7 +113,7 @@ const EMOTION_BUCKETS: Record<string, string[]> = {
   ],
 };
 
-// reverse lookup: micro-emotion name → bucket name
+
 const microToBucket = new Map<string, string>();
 for (const [bucket, labels] of Object.entries(EMOTION_BUCKETS)) {
   for (const label of labels) {
@@ -125,13 +121,12 @@ for (const [bucket, labels] of Object.entries(EMOTION_BUCKETS)) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 function aggregateEmotions(predictionsJson: any) {
   const bucketNames = Object.keys(EMOTION_BUCKETS);
   const unmapped = new Set<string>();
 
-  // per-model accumulators: keyed by "modelName:bucket" for independent averaging
-  // this prevents the face model (200+ frames) from drowning out prosody/language (2-5 frames)
+  
   const modelTotals = new Map<string, number>();
   const modelCounts = new Map<string, number>();
 
@@ -173,19 +168,13 @@ function aggregateEmotions(predictionsJson: any) {
     modelNames.add(key.split(":")[0]);
   }
 
-  // prosody (voice tone) and language (spoken words) are direct, intentional expressions of
-  // what a person is feeling — they should carry more weight than passive face microexpressions,
-  // which can be misleading (e.g. a sad person sitting still looks "calm" and "concentrated")
   const MODEL_WEIGHTS: Record<string, number> = {
     face: 0.25,
     prosody: 0.40,
     language: 0.35,
   };
 
-  // step 1: average within each model per bucket (normalizes for differing frame counts)
-  // step 2: compute a weighted average across models per bucket
-  //         — using weighted avg instead of max prevents the face model's passive
-  //           neutral-state scores from overriding clear verbal/vocal sadness signals
+
   const averaged: Record<string, number> = {};
 
   for (const bucket of bucketNames) {
@@ -247,7 +236,7 @@ export async function processEmotionAnalysis(fileKey: string): Promise<
   try {
     // generate a temporary read url so hume can fetch the video from s3
     const getCommand = new GetObjectCommand({
-      Bucket: process.env.AWS_BUCKET_NAME!,
+      Bucket: process.env.MY_AWS_BUCKET_NAME!,
       Key: fileKey,
     });
     const videoUrl = await getSignedUrl(s3Client, getCommand, {
@@ -318,13 +307,12 @@ export async function processEmotionAnalysis(fileKey: string): Promise<
     const predictionsJson = await predictionsRes.json();
     const { averaged, dominantEmotion } = aggregateEmotions(predictionsJson);
 
-    // execute s3 cleanup and database persistence concurrently
-    // fork/join pattern — privacy deletion and data save run in parallel
+
     const [deleteResult, saveResult] = await Promise.allSettled([
       // task a: permanently delete the video from s3
       s3Client.send(
         new DeleteObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME!,
+          Bucket: process.env.MY_AWS_BUCKET_NAME!,
           Key: fileKey,
         }),
       ),

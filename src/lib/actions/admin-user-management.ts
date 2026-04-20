@@ -20,25 +20,28 @@ import {
   counselorUnsuspendedEmail,
 } from "@/lib/email-templates";
 
+// s3 client used to generate presigned download urls for counselor documents
 const s3 = new S3Client({
-  region: process.env.AWS_REGION!,
+  region: process.env.MY_AWS_REGION!,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    sessionToken: process.env.AWS_SESSION_TOKEN,
+    accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY!,
+    // session token is required for learner lab temporary credentials
+    sessionToken: process.env.MY_AWS_SESSION_TOKEN,
   },
 });
 
-const BUCKET = process.env.AWS_BUCKET_NAME!;
+// s3 bucket name read from env so it can differ between environments
+const BUCKET = process.env.MY_AWS_BUCKET_NAME!;
 
-// guard: only admin can call these actions
+// checks that the caller is an authenticated admin before allowing any action
 async function assertAdmin() {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") return null;
   return session;
 }
 
-// extract s3 key from stored public url
+// extracts the s3 object key from a stored public url
 function keyFromUrl(url: string): string | null {
   try {
     const p = new URL(url).pathname;
@@ -49,11 +52,12 @@ function keyFromUrl(url: string): string | null {
   }
 }
 
+// returns the base url of the app, falling back to localhost in development
 function appBase() {
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
-// dashboard link for reinstatement emails (patient / counselor / admin)
+// builds the correct dashboard url for a given role so reinstatement emails link to the right page
 function dashboardUrlForRole(role: string): string {
   const base = appBase();
   if (role === "PATIENT") return `${base}/dashboard/patient`;
@@ -61,7 +65,7 @@ function dashboardUrlForRole(role: string): string {
   return `${base}/dashboard/admin`;
 }
 
-// revalidate all paths that might show user status
+// revalidates all admin and dashboard paths that display user status so they reflect the change immediately
 function revalidateUserPaths(userId: string) {
   revalidatePath("/dashboard/admin/users/counselors");
   revalidatePath("/dashboard/admin/users/patients");
@@ -71,7 +75,7 @@ function revalidateUserPaths(userId: string) {
   revalidatePath("/dashboard/counselor");
 }
 
-// overview stats shown at top of user management page
+// shape of the stats object shown at the top of the admin user management page
 export type AdminUserStats = {
   totalPatients: number;
   totalCounselors: number;
@@ -120,7 +124,7 @@ export async function getAdminUserStats(): Promise<AdminUserStats | { error: str
   };
 }
 
-// counselor search params
+// search and filter params for the admin counselor list
 export type AdminCounselorSearchParams = {
   query?: string;
   verificationStatus?: "PENDING" | "VERIFIED" | "REJECTED" | "all";
@@ -164,7 +168,7 @@ export async function searchAdminCounselors(
 
   const page = params.page ?? 1;
 
-  // build a strongly typed where clause
+  // build the where clause dynamically based on whichever filters the admin applied
   const where: Prisma.CounselorProfileWhereInput = {};
 
   if (params.query?.trim()) {
@@ -195,7 +199,7 @@ export async function searchAdminCounselors(
     }
   }
 
-  // orderBy for db-level fields only; aggregated sorts happen after
+  // only db-level fields can be sorted by prisma directly; popularity and rating are sorted after fetching
   const orderBy: Prisma.CounselorProfileOrderByWithRelationInput =
     params.sortBy === "experience"
       ? { experienceYears: "desc" }
@@ -226,7 +230,7 @@ export async function searchAdminCounselors(
     prisma.counselorProfile.count({ where }),
   ]);
 
-  // compute ratings for this page in parallel
+  // fetch rating stats for each counselor on this page in parallel to avoid sequential queries
   const ratingResults = await Promise.all(
     rows.map((r) =>
       Promise.all([
@@ -266,7 +270,7 @@ export async function searchAdminCounselors(
     };
   });
 
-  // aggregated sorts applied after fetching
+  // apply in-memory sorts for fields that can not be sorted at the database level
   if (params.sortBy === "popularity") {
     counselors.sort((a, b) => b.totalAppointments - a.totalAppointments);
   } else if (params.sortBy === "rating") {
@@ -276,7 +280,7 @@ export async function searchAdminCounselors(
   return { counselors, total, page, totalPages: Math.ceil(total / ADMIN_PAGE_SIZE) };
 }
 
-// patient search params
+// search and filter params for the admin patient list
 export type AdminPatientSearchParams = {
   query?: string;
   accountStatus?: "active" | "suspended" | "banned" | "all";
@@ -387,7 +391,7 @@ export async function searchAdminPatients(
   return { patients, total, page, totalPages: Math.ceil(total / ADMIN_PAGE_SIZE) };
 }
 
-// full counselor detail for admin
+// full detail shape for a single counselor shown on the admin user detail page
 export type AdminCounselorDetail = {
   id: string;
   userId: string;
@@ -530,7 +534,7 @@ export async function getAdminCounselorDetail(
   };
 }
 
-// full patient detail for admin
+// full detail shape for a single patient shown on the admin user detail page
 export type AdminPatientDetail = {
   id: string;
   userId: string;
@@ -642,7 +646,7 @@ export async function getAdminPatientDetail(
   };
 }
 
-// ban a user (counselor or patient)
+// permanently bans a user, writes to the audit log, and sends a ban notification email
 export async function adminBanUser(
   targetUserId: string,
   reason: string
@@ -707,7 +711,7 @@ export async function adminBanUser(
   return { success: true };
 }
 
-// unban a user
+// lifts a ban from a user, writes to the audit log, and sends a reinstatement email
 export async function adminUnbanUser(
   targetUserId: string
 ): Promise<{ success: true } | { error: string }> {
@@ -762,7 +766,7 @@ export async function adminUnbanUser(
   return { success: true };
 }
 
-// suspend a user for a given number of days
+// suspends a user for a set number of days, writes to the audit log, and sends a suspension email
 export async function adminSuspendUser(
   targetUserId: string,
   days: number,
@@ -833,7 +837,7 @@ export async function adminSuspendUser(
   return { success: true };
 }
 
-// unsuspend a user manually
+// manually lifts a suspension from a user and sends a reinstatement email
 export async function adminUnsuspendUser(
   targetUserId: string
 ): Promise<{ success: true } | { error: string }> {
@@ -888,7 +892,7 @@ export async function adminUnsuspendUser(
   return { success: true };
 }
 
-// verify a counselor from the user management detail page
+// verifies a counselor directly from the user management detail page and notifies them
 export async function adminVerifyCounselor(
   counselorProfileId: string
 ): Promise<{ success: true } | { error: string }> {
@@ -944,7 +948,7 @@ export async function adminVerifyCounselor(
   return { success: true };
 }
 
-// revoke counselor verification
+// revokes a counselor's verification and emails them to re-upload documents
 export async function adminRevokeCounselorVerification(
   counselorProfileId: string
 ): Promise<{ success: true } | { error: string }> {
@@ -998,7 +1002,7 @@ export async function adminRevokeCounselorVerification(
   return { success: true };
 }
 
-// presigned download url for any counselor verification doc
+// generates a short-lived presigned url so admin can download any counselor verification document
 export async function getAdminDocumentDownloadUrl(
   documentId: string
 ): Promise<{ url: string } | { error: string }> {

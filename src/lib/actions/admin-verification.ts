@@ -9,19 +9,19 @@ import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email";
 import { createNotification } from "@/lib/notifications";
 
-// shared s3 client for presigned reads (same config as verification uploads)
+// s3 client used to generate presigned download urls for verification documents
 const s3 = new S3Client({
-  region: process.env.AWS_REGION!,
+  region: process.env.MY_AWS_REGION!,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    sessionToken: process.env.AWS_SESSION_TOKEN,
+    accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY!,
+    sessionToken: process.env.MY_AWS_SESSION_TOKEN,
   },
 });
 
-const BUCKET = process.env.AWS_BUCKET_NAME!;
+const BUCKET = process.env.MY_AWS_BUCKET_NAME!;
 
-// guard: only admin sessions can call these actions
+// checks that the caller is an authenticated admin before allowing any action
 async function assertAdmin(): Promise<
   { ok: true; session: Session } | { ok: false }
 > {
@@ -32,7 +32,7 @@ async function assertAdmin(): Promise<
   return { ok: true, session };
 }
 
-// pull object key from our stored public url shape
+// extracts the s3 object key from the stored public url
 function keyFromDocumentUrl(documentUrl: string): string | null {
   try {
     const path = new URL(documentUrl).pathname;
@@ -56,7 +56,7 @@ export type PendingCounselorListItem = {
   specialties: { id: number; name: string }[];
 };
 
-// all counselors waiting on admin review (includes no document yet)
+// returns all counselors with pending verification status for the admin queue page
 export async function listPendingCounselors(): Promise<
   PendingCounselorListItem[] | { error: string }
 > {
@@ -65,7 +65,7 @@ export async function listPendingCounselors(): Promise<
 
   const rows = await prisma.counselorProfile.findMany({
     where: { verificationStatus: "PENDING" },
-    // no updatedAt on CounselorProfile — id order is stable newest-first-ish for cuid
+    // there is no updatedAt on CounselorProfile so we sort by id which is a cuid and roughly newest-first
     orderBy: { id: "desc" },
     include: {
       user: { select: { email: true } },
@@ -117,7 +117,7 @@ export type CounselorVerificationDetail = {
   specialties: { id: number; name: string }[];
 };
 
-// one counselor for the detail page (must still be pending)
+// fetches the full detail of a single pending counselor for the verification review page
 export async function getCounselorVerificationDetail(
   counselorProfileId: string
 ): Promise<CounselorVerificationDetail | null | { error: string }> {
@@ -158,7 +158,7 @@ export async function getCounselorVerificationDetail(
   };
 }
 
-// presigned get url for admin only, short expiry
+// generates a short-lived presigned url so the admin can download a verification document
 export async function getAdminVerificationDocumentDownloadUrl(
   documentId: string
 ): Promise<{ url: string } | { error: string }> {
@@ -190,6 +190,7 @@ function appBaseUrl() {
   return process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
+// revalidates all counselor-facing and patient-facing paths after a verification status change
 function revalidateCounselorSide() {
   revalidatePath("/dashboard/patient");
   revalidatePath("/dashboard/counselor");
@@ -197,6 +198,7 @@ function revalidateCounselorSide() {
   revalidatePath("/dashboard/counselor/onboarding");
 }
 
+// approves a pending counselor, sends a confirmation email, and creates an in-app notification
 export async function approveCounselorVerification(
   counselorProfileId: string
 ): Promise<{ success: true } | { error: string }> {
@@ -244,6 +246,7 @@ export async function approveCounselorVerification(
   return { success: true };
 }
 
+// rejects a pending counselor, sends an email asking them to re-upload documents
 export async function rejectCounselorVerification(
   counselorProfileId: string
 ): Promise<{ success: true } | { error: string }> {

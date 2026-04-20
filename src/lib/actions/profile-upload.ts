@@ -6,20 +6,21 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-// s3 client using env credentials — same setup as s3-verification.ts
+// s3 client for profile picture uploads and deletions
 const s3 = new S3Client({
-  region: process.env.AWS_REGION!,
+  region: process.env.MY_AWS_REGION!,
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    // session token needed for learner lab temporary credentials
-    sessionToken: process.env.AWS_SESSION_TOKEN,
+    accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY!,
+    // session token is required for learner lab temporary credentials
+    sessionToken: process.env.MY_AWS_SESSION_TOKEN,
   },
 });
 
-const BUCKET = process.env.AWS_BUCKET_NAME!;
+// s3 bucket name read from env so it can differ between environments
+const BUCKET = process.env.MY_AWS_BUCKET_NAME!;
 
-// get a presigned put url for uploading profile picture directly to s3
+// generates a presigned put url so the browser can upload the image directly to s3
 export async function getProfilePictureUploadUrl(
   contentType: string
 ): Promise<{ signedUrl: string; fileKey: string } | { error: string }> {
@@ -32,7 +33,7 @@ export async function getProfilePictureUploadUrl(
   }
 
   const ext = contentType === "image/png" ? "png" : "jpg";
-  // key scoped to the user so only they can own this path
+  // file key is scoped to the user id so each user can only own their own path
   const fileKey = `profiles/${session.user.id}-${Date.now()}.${ext}`;
 
   const command = new PutObjectCommand({
@@ -49,20 +50,20 @@ export async function getProfilePictureUploadUrl(
   }
 }
 
-// save the new profile picture url into user.image and invalidate cached paths
+// saves the uploaded image url to the user record and refreshes all pages that show the avatar
 export async function saveProfilePicture(
   fileKey: string
 ): Promise<{ success: true; imageUrl: string } | { error: string }> {
   const session = await auth();
   if (!session?.user?.id) return { error: "Unauthorized" };
 
-  // validate the key belongs to this user before saving
+  // make sure the file key belongs to this user before writing it to the database
   const expectedPrefix = `profiles/${session.user.id}-`;
   if (!fileKey.startsWith(expectedPrefix)) {
     return { error: "Invalid file key." };
   }
 
-  const imageUrl = `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+  const imageUrl = `https://${BUCKET}.s3.${process.env.MY_AWS_REGION}.amazonaws.com/${fileKey}`;
 
   try {
     await prisma.user.update({
@@ -70,7 +71,7 @@ export async function saveProfilePicture(
       data: { image: imageUrl },
     });
 
-    // revalidate all surfaces where the profile image appears
+    // revalidate every page that shows the profile avatar so they pick up the new image
     revalidatePath("/dashboard/counselor/profile");
     revalidatePath("/dashboard/counselor/profile/edit");
     revalidatePath("/dashboard/counselor/onboarding");
@@ -84,13 +85,13 @@ export async function saveProfilePicture(
   }
 }
 
-// remove profile picture — deletes from s3 (best-effort) and clears user.image
+// removes the profile picture — tries to delete the file from s3 then clears the url in the database
 export async function removeProfilePicture(): Promise<{ success: true } | { error: string }> {
   const session = await auth();
   if (!session?.user?.id) return { error: "Unauthorized" };
 
   try {
-    // fetch current image url so we can attempt s3 cleanup
+    // fetch the current image url so we know which s3 object to delete
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { image: true },
@@ -98,12 +99,12 @@ export async function removeProfilePicture(): Promise<{ success: true } | { erro
 
     if (user?.image) {
       try {
-        // extract s3 key from url and delete from bucket
+        // parse the s3 key out of the stored url and send the delete command
         const url = new URL(user.image);
-        const fileKey = url.pathname.slice(1); // strip leading /
+        const fileKey = url.pathname.slice(1); // strip the leading slash
         await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: fileKey }));
       } catch {
-        // s3 deletion failure is non-fatal — proceed to clear db record
+        // s3 deletion is best-effort, we still clear the db record even if it fails
       }
     }
 
