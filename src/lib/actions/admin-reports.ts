@@ -82,7 +82,7 @@ export async function getAdminReportStats(): Promise<AdminReportStats | { error:
       }),
     ]);
 
-  // find patient ids that are at risk (7–19 reports) and high risk (≥15)
+  // at risk patients with 7 to 19 reports
   const atRiskIds = allPatientCounts
     .filter((r) => r._count.id >= 7 && r._count.id < 20)
     .map((r) => r.patientProfileId);
@@ -137,7 +137,7 @@ export async function searchAdminReports(params: AdminReportSearchParams = {}): 
     createdAtFilter = { gte: monthAgo };
   }
 
-  // build patient id filter for the risk level
+  // risk filter thresholds
   let riskPatientIds: string[] | undefined;
   if (params.riskLevel && params.riskLevel !== "all") {
     const allCounts = await prisma.report.groupBy({
@@ -228,7 +228,6 @@ export async function searchAdminReports(params: AdminReportSearchParams = {}): 
   }));
 
   // sort by patient total report count within the page if requested
-  // note: this is within-page only since global sort needs a subquery
   if (params.sortBy === "mostReported") {
     reports.sort((a, b) => b.patientTotalReports - a.patientTotalReports);
   }

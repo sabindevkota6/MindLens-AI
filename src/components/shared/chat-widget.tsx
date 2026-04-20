@@ -299,7 +299,7 @@ export function ChatWidget({ role = "PATIENT" }: { role?: string }) {
         </div>
       )}
 
-      {/* floating action button — toggles the chat open/closed */}
+      {/* floating action button to toggle the chat open/closed */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(

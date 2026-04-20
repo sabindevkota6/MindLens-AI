@@ -48,10 +48,12 @@ export async function createMeetingJwt({
 }: CreateMeetingJwtParams): Promise<string> {
   const appId = getJitsiAppId();
   const keyId = getRequiredEnv("JAAS_KID");
+  // env vars store newlines as literal \n
   const privateKeyPem = getRequiredEnv("JAAS_PRIVATE_KEY").replace(/\\n/g, "\n");
   const privateKey = await importPKCS8(privateKeyPem, "RS256");
 
   const now = Math.floor(Date.now() / 1000);
+  // guarantee at least 60s validity even if the slot end time has already passed
   const expiry = Math.max(Math.floor(expiresAt.getTime() / 1000), now + 60);
 
   return new SignJWT({

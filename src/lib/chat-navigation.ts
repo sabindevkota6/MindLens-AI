@@ -25,6 +25,7 @@ type RoleNavigationConfig = {
   routeContexts: RouteContext[];
 };
 
+// /* suffix means prefix match, exact otherwise
 function matchesRoute(pattern: string, pathname: string): boolean {
   if (pattern.endsWith("/*")) {
     return pathname.startsWith(pattern.slice(0, -1));
@@ -33,6 +34,7 @@ function matchesRoute(pattern: string, pathname: string): boolean {
   return pathname === pattern;
 }
 
+// first match wins, so order in routeContexts matters
 function findCurrentRouteContext(
   routeContexts: RouteContext[],
   pathname: string
@@ -199,6 +201,7 @@ export function getNavLinksForRole(role: string): DashboardNavLink[] {
   return role === "COUNSELOR" ? counselorNavLinks : patientNavLinks;
 }
 
+// builds the static role and nav section injected into the chatbot system prompt
 export function buildRoleAwareNavigationContext(role: string): string {
   const config = role === "COUNSELOR" ? roleNavigation.COUNSELOR : roleNavigation.PATIENT;
 
@@ -221,6 +224,7 @@ export function buildRoleAwareNavigationContext(role: string): string {
   ].join("\n");
 }
 
+// builds the current page section so the ai knows exactly where the user is
 export function buildCurrentPageContext(
   role: string,
   currentPathname?: string

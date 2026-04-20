@@ -1,4 +1,4 @@
-// google "G" logo as an inline svg — no external package needed
+// google "G" logo as an inline svg
 export function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg

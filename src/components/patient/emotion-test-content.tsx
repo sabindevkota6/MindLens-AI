@@ -51,7 +51,7 @@ const suggestedPrompts = [
   "Daily mood",
 ];
 
-// tab-scoped cache key that  restores the latest report if the user navigates away and returns within the same tab like browsing a counselor profile then going back
+
 const TAB_CACHE_KEY = "mer_tab_results";
 
 export function EmotionTestContent() {
@@ -87,7 +87,7 @@ export function EmotionTestContent() {
     try {
       sessionStorage.setItem(TAB_CACHE_KEY, JSON.stringify(data));
     } catch {
-      // sessionStorage unavailable (e.g. private browsing with storage blocked) — silently skip
+      // sessionStorage unavailable 
     }
     setResults(data);
     setResultsKey((k) => k + 1);
@@ -181,7 +181,7 @@ export function EmotionTestContent() {
         </div>
       </section>
 
-      {/* results dashboard — revealed after analysis completes */}
+      {/* results dashboard */}
       {results && (
         <section ref={resultsRef} className="px-4 md:px-8 pt-8">
           <div className="max-w-7xl mx-auto">
@@ -196,7 +196,7 @@ export function EmotionTestContent() {
         </section>
       )}
 
-      {/* main recording section — full card when no results, compact when results exist */}
+      {/* main recording section with full card when no results, compact when results exist */}
       <section className="px-4 md:px-8 py-8">
         <div className="max-w-7xl mx-auto">
           {!results ? (

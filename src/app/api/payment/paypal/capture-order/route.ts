@@ -7,7 +7,7 @@ async function getPaypalAccessToken(): Promise<string> {
   const credentials = Buffer.from(
     `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
   ).toString("base64");
-
+  // sandbox api for testing purposes
   const res = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
     method: "POST",
     headers: {
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "orderId and appointmentId are required" }, { status: 400 });
   }
 
-  // verify the appointment belongs to the requesting patient
+  // look up payment by paypal order id, then verify the appointment belongs to this patient
   const payment = await prisma.payment.findFirst({
     where: { gatewayOrderId: orderId },
   });
@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Payment was not approved" }, { status: 402 });
     }
 
+    // use the capture transaction id as the payment reference, fall back to order id if missing
     const txnId = capture.purchase_units[0]?.payments?.captures[0]?.id ?? orderId;
 
     const result = await finalizeSuccessfulBooking(appointmentId, txnId);

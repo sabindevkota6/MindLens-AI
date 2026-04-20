@@ -312,7 +312,7 @@ function EnforcementSection({ initialSettings }: { initialSettings: PlatformSett
           )}
         </div>
 
-        {/* save button + status */}
+        {/* save button and status */}
         <div className="flex items-center gap-3 pt-2">
           <Button
             onClick={handleSave}
@@ -410,7 +410,7 @@ function SpecialtiesSection({ initialSpecialties }: { initialSpecialties: Specia
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* top action bar: search + add */}
+        {/* top action bar: search and add */}
         <div className="flex gap-3">
           {/* search */}
           <div className="relative flex-1">
@@ -550,7 +550,7 @@ function AuditLogSection() {
   const [isPending, startTransition] = useTransition();
   const [hasFetched, setHasFetched] = useState(false);
 
-  // fetch audit log entries — runs in transition so ui stays responsive
+  // fetch audit log entries with current filters and page
   const fetchLogs = useCallback(
     (p: number) => {
       startTransition(async () => {
@@ -575,7 +575,7 @@ function AuditLogSection() {
     fetchLogs(1);
   }, [fetchLogs]);
 
-  // build ellipsis pagination pages array
+  // build pagination pages array
   function getPages(): (number | "…")[] {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const pages: (number | "…")[] = [1];

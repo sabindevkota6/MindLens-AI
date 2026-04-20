@@ -38,7 +38,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ── helpers ──────────────────────────────────────────────────────────────────
 
 const avatarColor = { bg: "bg-primary/10", text: "text-primary" };
 
@@ -60,7 +59,7 @@ function reportCountBadgeClass(count: number) {
   return "text-gray-500 bg-gray-50 border-gray-100";
 }
 
-// ── at-risk row subcomponent ──────────────────────────────────────────────────
+// at-risk row subcomponent
 
 function AtRiskRow({
   patient,
@@ -88,7 +87,7 @@ function AtRiskRow({
         {getInitials(patient.fullName)}
       </div>
 
-      {/* name + status */}
+      {/* name and status */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900 truncate">{patient.fullName}</p>
         <div className="flex items-center gap-1 mt-0.5">
@@ -131,7 +130,7 @@ function AtRiskRow({
   );
 }
 
-// ── main component ────────────────────────────────────────────────────────────
+// main component
 
 interface AdminReportsListProps {
   atRiskPatients: AtRiskPatient[];
@@ -154,7 +153,7 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
   const [totalPages, setTotalPages] = useState(1);
   const [isPending, startTransition] = useTransition();
 
-  // search reports with optional filters — runs in transition so ui stays responsive
+  // search reports with optional filters which runs in transition so ui stays responsive
   const fetchReports = useCallback(
     (p: number = 1) => {
       startTransition(async () => {
@@ -202,7 +201,7 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
   return (
     <div className="space-y-5">
 
-      {/* ── search + filter card ── */}
+      {/* search and filter card */}
       <Card className="border-0 shadow-sm bg-white overflow-hidden">
         <CardContent className="p-5 space-y-4">
           <div className="flex gap-3">
@@ -304,9 +303,9 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
         </CardContent>
       </Card>
 
-      {/* ── report rows ── */}
+      {/* report rows */}
       {isPending ? (
-        // skeleton — 6 rows matching the real row structure
+        // skeleton 6 rows matching the real row structure
         <Card className="border-0 shadow-sm">
           <CardContent className="p-0 divide-y divide-gray-50">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -344,7 +343,7 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
           </CardContent>
         </Card>
       ) : (
-        // single card with divider rows — not a card grid
+        // single card with divider rows
         <Card className="border-0 shadow-sm overflow-hidden">
           <CardContent className="p-0 divide-y divide-gray-50">
             {reports.map((r, i) => {
@@ -378,7 +377,6 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
                       {getInitials(r.patientName)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      {/* patient name — stop propagation so row click doesn't double-fire */}
                       <Link
                         href={`/dashboard/admin/users/patients/${r.patientId}`}
                         className="text-sm font-semibold text-gray-900 truncate block hover:text-primary transition-colors"
@@ -401,7 +399,7 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
                             <CheckCircle className="w-2.5 h-2.5" />Active
                           </span>
                         )}
-                        {/* report count chip — risk-colored */}
+                        {/* report count chip */}
                         <span
                           className={cn(
                             "flex items-center gap-0.5 text-[10px] font-medium border rounded-full px-1.5 py-0.5",
@@ -420,14 +418,14 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
                     </div>
                   </div>
 
-                  {/* report reason — hidden on mobile */}
+                  {/* report reason hidden on mobile */}
                   <div className="flex-1 hidden sm:block min-w-0">
                     <p className="text-sm text-gray-700 line-clamp-2 leading-snug">
                       {r.reason}
                     </p>
                   </div>
 
-                  {/* counselor + date — hidden on mobile */}
+                  {/* counselor and date hidden on mobile */}
                   <div className="w-[190px] hidden md:block flex-shrink-0 text-right">
                     <p className="text-xs text-gray-500 truncate">
                       Filed by{" "}
@@ -469,7 +467,7 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
         </Card>
       )}
 
-      {/* ── pagination ── */}
+      {/* pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-2">
           <Button
@@ -528,7 +526,7 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
         </div>
       )}
 
-      {/* ── at-risk patients panel ── */}
+      {/* at-risk patients panel */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
@@ -542,7 +540,7 @@ export function AdminReportsList({ atRiskPatients }: AdminReportsListProps) {
 
         <CardContent className="pt-0">
           {atRiskPatients.length === 0 ? (
-            // empty state — all clear
+            // empty state
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <ShieldCheck className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
               <p className="text-sm font-medium text-emerald-600">All clear</p>

@@ -180,7 +180,7 @@ export function CounselorDashboardCharts({ data }: { data: DashboardData }) {
         </Card>
       </div>
 
-      {/* second row - rating distribution + today's schedule */}
+      {/* second row for rating distribution and today's schedule */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* rating distribution bar chart */}
         <Card className="border-0 shadow-sm">
@@ -252,7 +252,7 @@ export function CounselorDashboardCharts({ data }: { data: DashboardData }) {
         </Card>
       </div>
 
-      {/* third row - upcoming appointments + recent reviews */}
+      {/* third row for upcoming appointments and recent reviews */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* upcoming appointments */}
         <Card className="border-0 shadow-sm">

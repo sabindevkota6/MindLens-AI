@@ -187,6 +187,9 @@ export const getAppointmentDetail = async (appointmentId: string) => {
             reports: {
                 select: { id: true },
             },
+            attachedEmotionLog: {
+                select: { id: true, dominantEmotion: true, recordedAt: true },
+            },
         },
     });
 
@@ -259,6 +262,8 @@ export const getAppointmentDetail = async (appointmentId: string) => {
             totalAppointments: completedCount,
             memberSince: appointment.counselor.user.createdAt,
         },
+        medicalConcern: appointment.medicalConcern ?? null,
+        emotionLog: appointment.attachedEmotionLog ?? null,
         review: appointment.review,
         hasReport: appointment.reports.length > 0,
         canCancel: appointment.status === "SCHEDULED" && hoursUntilStart >= CANCEL_CUTOFF_HOURS,

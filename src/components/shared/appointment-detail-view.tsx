@@ -25,6 +25,9 @@ import {
   DollarSign,
   Award,
   BookOpen,
+  HeartPulse,
+  BarChart3,
+  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -79,6 +82,8 @@ export type AppointmentDetail = {
     totalAppointments: number;
     memberSince: Date;
   };
+  medicalConcern: string | null;
+  emotionLog: { id: string; dominantEmotion: string; recordedAt: Date } | null;
   review: { id: string; rating: number; comment: string | null } | null;
   hasReport: boolean;
   canCancel: boolean;
@@ -254,6 +259,84 @@ export function AppointmentDetailView({ appointment, role }: AppointmentDetailVi
 
   const counselor = appointment.counselor;
   const patient = appointment.patient;
+  const hasInsights = !isPatient && !!(appointment.medicalConcern || appointment.emotionLog);
+
+  function ActionsCard() {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Actions</h3>
+
+        <div className="flex flex-wrap gap-3">
+          {appointment.status === "SCHEDULED" && appointment.meetingLink && (
+            <Button onClick={handleJoinClick} className="bg-primary hover:bg-primary/90 gap-2">
+              <Video className="w-4 h-4" />
+              Join Meeting
+            </Button>
+          )}
+          {appointment.canMarkComplete && (
+            <Button onClick={() => setCompleteDialogOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              Mark Completed
+            </Button>
+          )}
+          {appointment.canAddNote && (
+            <Button variant="outline" onClick={() => setNoteDialogOpen(true)} className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              {appointment.patientNote ? "Edit Note" : "Add Note"}
+            </Button>
+          )}
+          {appointment.canReview && (
+            <Button variant="outline" onClick={() => setReviewDialogOpen(true)} className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50">
+              <Star className="w-4 h-4" />
+              Write Review
+            </Button>
+          )}
+          {appointment.canAdjust && (
+            <Button variant="outline" onClick={handleAdjustClick} className="gap-2">
+              <ArrowLeftRight className="w-4 h-4" />
+              Adjust Time
+            </Button>
+          )}
+          {appointment.canCancel && (
+            <Button variant="outline" onClick={() => setCancelDialogOpen(true)} className="gap-2 border-red-300 text-red-600 hover:bg-red-50">
+              <Ban className="w-4 h-4" />
+              Cancel Appointment
+            </Button>
+          )}
+          {appointment.canReport && !appointment.hasReport && (
+            <Button variant="outline" onClick={() => setReportDialogOpen(true)} className="gap-2 border-orange-300 text-orange-600 hover:bg-orange-50">
+              <Flag className="w-4 h-4" />
+              Report Patient
+            </Button>
+          )}
+          {!(appointment.status === "SCHEDULED" && appointment.meetingLink) &&
+            !appointment.canCancel &&
+            !appointment.canAdjust &&
+            !appointment.canReview &&
+            !appointment.canAddNote &&
+            !appointment.canReport && (
+            <p className="text-sm text-gray-400 italic">No actions available for this appointment.</p>
+          )}
+        </div>
+
+        <Separator />
+        <div className="flex items-start gap-2 text-xs text-gray-500">
+          <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <p>Cancellation is allowed up to <strong>4 hours</strong> before the scheduled time.</p>
+            {isPatient ? (
+              <p>For time adjustments, you can request the counselor using the &apos;Add Note&apos; option.</p>
+            ) : (
+              <>
+                <p>Time adjustments are allowed up to <strong>2 hours</strong> before the appointment (same day only).</p>
+                <p>Appointments not marked as completed within <strong>5 minutes</strong> after the end time will be marked as missed.</p>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -418,6 +501,7 @@ export function AppointmentDetailView({ appointment, role }: AppointmentDetailVi
               )}
             </div>
           </div>
+
         </div>
 
         {/* ─── Right column: Appointment details + actions ─── */}
@@ -517,99 +601,56 @@ export function AppointmentDetailView({ appointment, role }: AppointmentDetailVi
             )}
           </div>
 
-          {/* ─── Actions card ─── */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Actions</h3>
+          {/* ─── Patient insights card (counselor only) ─── */}
+          {!isPatient && (appointment.medicalConcern || appointment.emotionLog) && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Patient Insights</h3>
 
-            <div className="flex flex-wrap gap-3">
-              {/* Join Meeting */}
-              {appointment.status === "SCHEDULED" && appointment.meetingLink && (
-                <Button onClick={handleJoinClick} className="bg-primary hover:bg-primary/90 gap-2">
-                  <Video className="w-4 h-4" />
-                  Join Meeting
-                </Button>
+              {appointment.medicalConcern && (
+                <div className="p-4 bg-teal-50 border border-teal-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <HeartPulse className="w-4 h-4 text-teal-600 shrink-0" />
+                    <p className="text-xs font-semibold text-teal-700 uppercase tracking-wide">Medical Concern</p>
+                  </div>
+                  <p className="text-sm text-teal-900 leading-relaxed">{appointment.medicalConcern}</p>
+                </div>
               )}
 
-              {/* Mark Complete (Counselor) */}
-              {appointment.canMarkComplete && (
-                <Button onClick={() => setCompleteDialogOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Mark Completed
-                </Button>
-              )}
-
-              {/* Add/Edit Note (Patient) */}
-              {appointment.canAddNote && (
-                <Button variant="outline" onClick={() => setNoteDialogOpen(true)} className="gap-2">
-                  <MessageSquare className="w-4 h-4" />
-                  {appointment.patientNote ? "Edit Note" : "Add Note"}
-                </Button>
-              )}
-
-              {/* Write Review (Patient) */}
-              {appointment.canReview && (
-                <Button variant="outline" onClick={() => setReviewDialogOpen(true)} className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50">
-                  <Star className="w-4 h-4" />
-                  Write Review
-                </Button>
-              )}
-
-              {/* Adjust Time (Counselor) */}
-              {appointment.canAdjust && (
-                <Button variant="outline" onClick={handleAdjustClick} className="gap-2">
-                  <ArrowLeftRight className="w-4 h-4" />
-                  Adjust Time
-                </Button>
-              )}
-
-              {/* Cancel */}
-              {appointment.canCancel && (
-                <Button variant="outline" onClick={() => setCancelDialogOpen(true)} className="gap-2 border-red-300 text-red-600 hover:bg-red-50">
-                  <Ban className="w-4 h-4" />
-                  Cancel Appointment
-                </Button>
-              )}
-
-              {/* Report (Counselor) */}
-              {appointment.canReport && !appointment.hasReport && (
-                <Button variant="outline" onClick={() => setReportDialogOpen(true)} className="gap-2 border-orange-300 text-orange-600 hover:bg-orange-50">
-                  <Flag className="w-4 h-4" />
-                  Report Patient
-                </Button>
-              )}
-
-              {/* No actions available */}
-              {!appointment.meetingLink &&
-                !appointment.canCancel &&
-                !appointment.canAdjust &&
-                !appointment.canReview &&
-                !appointment.canAddNote &&
-                !appointment.canReport && (
-                <p className="text-sm text-gray-400 italic">No actions available for this appointment.</p>
+              {appointment.emotionLog && (
+                <div className="p-4 bg-violet-50 border border-violet-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-violet-600 shrink-0" />
+                      <p className="text-xs font-semibold text-violet-700 uppercase tracking-wide">Emotion Analysis</p>
+                    </div>
+                    <a
+                      href={`/api/counselor/emotion-report/${appointment.emotionLog.id}`}
+                      download
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download PDF
+                    </a>
+                  </div>
+                  <p className="text-sm text-violet-900">
+                    Dominant emotion:{" "}
+                    <span className="font-semibold capitalize">{appointment.emotionLog.dominantEmotion.toLowerCase()}</span>
+                    <span className="text-violet-500 ml-2 text-xs">
+                      · recorded {format(new Date(appointment.emotionLog.recordedAt), "MMM d, yyyy")}
+                    </span>
+                  </p>
+                </div>
               )}
             </div>
+          )}
 
-            {/* Policy notes */}
-            <Separator />
-            <div className="flex items-start gap-2 text-xs text-gray-500">
-              <FileText className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <div className="space-y-1">
-                <p>Cancellation is allowed up to <strong>4 hours</strong> before the scheduled time.</p>
-                {isPatient ? (
-                  <p>For time adjustments, you can request the counselor using the &apos;Add Note&apos; option.</p>
-                ) : (
-                  <>
-                    <p>Time adjustments are allowed up to <strong>2 hours</strong> before the appointment (same day only).</p>
-                    <p>Appointments not marked as completed within <strong>5 minutes</strong> after the end time will be marked as missed.</p>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+          {/* actions card inside right col only when no insights */}
+          {!hasInsights && <ActionsCard />}
         </div>
       </div>
 
-      {/* ════════════════════════════ DIALOGS ════════════════════════════ */}
+      {/* actions card full-width below grid when insights are present */}
+      {hasInsights && <ActionsCard />}
 
       {/* Cancel Dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>

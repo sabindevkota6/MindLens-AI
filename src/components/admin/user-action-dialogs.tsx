@@ -26,7 +26,7 @@ import {
   adminRevokeCounselorVerification,
 } from "@/lib/actions/admin-user-management";
 
-// ban dialog — requires admin to enter a reason
+// ban dialog with textarea for admin to enter a reason
 export function BanUserDialog({ userId, userName }: { userId: string; userName: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -98,7 +98,7 @@ export function BanUserDialog({ userId, userName }: { userId: string; userName: 
   );
 }
 
-// unban dialog — simple confirmation
+// unban dialog for simple confirmation
 export function UnbanUserDialog({ userId, userName }: { userId: string; userName: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -154,7 +154,7 @@ export function UnbanUserDialog({ userId, userName }: { userId: string; userName
   );
 }
 
-// suspend dialog — admin chooses duration + reason
+// suspend dialog where admin chooses duration and reason
 export function SuspendUserDialog({ userId, userName }: { userId: string; userName: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -264,7 +264,7 @@ export function SuspendUserDialog({ userId, userName }: { userId: string; userNa
   );
 }
 
-// unsuspend dialog — simple confirmation
+// unsuspend dialog for simple confirmation
 export function UnsuspendUserDialog({ userId, userName }: { userId: string; userName: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -320,7 +320,7 @@ export function UnsuspendUserDialog({ userId, userName }: { userId: string; user
   );
 }
 
-// verify counselor dialog — from user management detail page
+// verify counselor dialog from user management detail page
 export function VerifyCounselorDialog({
   counselorProfileId,
   counselorName,

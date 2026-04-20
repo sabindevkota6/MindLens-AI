@@ -197,7 +197,7 @@ export function AdminCounselorsList({ initialData, initialParams }: AdminCounsel
         </CardContent>
       </Card>
 
-      {/* counselor cards grid — mirrors patient browse card style */}
+      {/* counselor cards grid to mirror patient browse card style */}
       {isPending ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (

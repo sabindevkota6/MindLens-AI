@@ -14,7 +14,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// using presigned urls let the browser upload directly to s3 for bypassing next.js server payload limits entirely
+// using presigned urls
 const ALLOWED_CONTENT_TYPES = [
   "video/webm",
   "video/mp4",
@@ -60,7 +60,7 @@ export async function getMerUploadUrl(contentType: string): Promise<
   });
 
   try {
-    // 60 second expiry — enough time for the browser to initiate the upload
+    // 60 second expiry
     // but short enough to limit exposure if the url is leaked
     const signedUrl = await getSignedUrl(s3Client, command, {
       expiresIn: 60,
@@ -309,7 +309,7 @@ export async function processEmotionAnalysis(fileKey: string): Promise<
 
 
     const [deleteResult, saveResult] = await Promise.allSettled([
-      // task a: permanently delete the video from s3
+      // permanently delete the video from s3
       s3Client.send(
         new DeleteObjectCommand({
           Bucket: process.env.MY_AWS_BUCKET_NAME!,
@@ -326,7 +326,7 @@ export async function processEmotionAnalysis(fileKey: string): Promise<
       }),
     ]);
 
-    // log if s3 deletion failed but don't block the user — can be retried
+    // log if s3 deletion failed but don't block the user
     if (deleteResult.status === "rejected") {
       console.error("s3 video deletion failed:", deleteResult.reason);
     }

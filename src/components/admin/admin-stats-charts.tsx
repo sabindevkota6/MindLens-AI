@@ -187,7 +187,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
   return (
     <div className="space-y-5">
 
-      {/* ── section A: kpi cards ── */}
+      {/* kpi cards */}
       {/* row 1 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard
@@ -252,7 +252,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
         />
       </div>
 
-      {/* ── section B: user registrations + verification donut ── */}
+      {/* user registrations and verification donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* monthly user growth chart */}
         <Card className="lg:col-span-2 border-0 shadow-sm">
@@ -350,7 +350,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
         </Card>
       </div>
 
-      {/* ── section C: appointment trends + status donut ── */}
+      {/* appointment trends and status donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* monthly appointment outcomes chart */}
         <Card className="lg:col-span-2 border-0 shadow-sm">
@@ -462,7 +462,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
         </Card>
       </div>
 
-      {/* ── section D: top specialties + dominant emotions (horizontal bars) ── */}
+      {/* top specialties and dominant emotions (horizontal bars) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* top counselor specialties */}
         <Card className="border-0 shadow-sm">
@@ -569,7 +569,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
         </Card>
       </div>
 
-      {/* ── section E: top counselors table + recent reports ── */}
+      {/* top counselors table and recent reports */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* top 5 counselors by average rating */}
         <Card className="lg:col-span-2 border-0 shadow-sm">
@@ -666,7 +666,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
         </Card>
       </div>
 
-      {/* ── section F: this week snapshot + quick links ── */}
+      {/* this week snapshot and quick links */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* this week's activity snapshot */}
         <Card className="border-0 shadow-sm">
@@ -722,7 +722,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
             <CardDescription>Jump to other admin sections</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {/* verification queue — active link */}
+            {/* verification queue for active link */}
             <Link
               href="/dashboard/admin/verification"
               className="flex items-center gap-4 p-3.5 rounded-xl bg-gray-50 hover:bg-primary/5 transition-colors group"
@@ -742,7 +742,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
               <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0" />
             </Link>
 
-            {/* user management — active link */}
+            {/* user management for active link */}
             <Link
               href="/dashboard/admin/users/counselors"
               className="flex items-center gap-4 p-3.5 rounded-xl bg-gray-50 hover:bg-primary/5 transition-colors group"
@@ -757,7 +757,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
               <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0" />
             </Link>
 
-            {/* reports center — active link */}
+            {/* reports center for active link */}
             <Link
               href="/dashboard/admin/reports"
               className="flex items-center gap-4 p-3.5 rounded-xl bg-gray-50 hover:bg-primary/5 transition-colors group"
@@ -792,7 +792,7 @@ export function AdminStatsCharts({ data }: { data: AdminStats }) {
         </Card>
       </div>
 
-      {/* ── section G: mini stats row — appointment breakdown ── */}
+      {/* mini stats row for appointment breakdown */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <MiniStat
           icon={<CalendarCheck className="w-4 h-4" />}

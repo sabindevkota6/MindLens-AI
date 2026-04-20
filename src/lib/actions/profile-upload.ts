@@ -85,7 +85,7 @@ export async function saveProfilePicture(
   }
 }
 
-// removes the profile picture — tries to delete the file from s3 then clears the url in the database
+// removes the profile picture by trying to delete the file from s3 then clears the url in the database
 export async function removeProfilePicture(): Promise<{ success: true } | { error: string }> {
   const session = await auth();
   if (!session?.user?.id) return { error: "Unauthorized" };

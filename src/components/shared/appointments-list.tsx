@@ -21,7 +21,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAppointments } from "@/lib/actions/appointment";
 
-// --- Types ---
+// types
 type AppointmentCategory = "upcoming" | "ongoing" | "completed" | "missed" | "cancelled";
 
 export interface Appointment {
@@ -51,7 +51,7 @@ interface AppointmentsListProps {
   initialCategory: AppointmentCategory;
 }
 
-// --- Status badge styling ---
+// returns the styled badge for a given appointment status
 function getStatusBadge(status: string) {
   switch (status) {
     case "SCHEDULED":
@@ -107,7 +107,7 @@ export function AppointmentsList({
     ? "/dashboard/patient/appointments"
     : "/dashboard/counselor/appointments";
 
-  // --- Fetch appointments ---
+  // fetches a page of appointments for the selected category
   function fetchPage(category: AppointmentCategory, page: number) {
     startTransition(async () => {
       const result = await getAppointments(category, page);
