@@ -54,11 +54,11 @@ interface SpecialtyOption {
 interface CounselorOnboardingFormProps {
   email: string;
   specialties: SpecialtyOption[];
-  /** Open directly on step 3 (e.g. returning from dashboard to upload verification). */
+  //Open directly on step 3 
   initialStep?: 1 | 2 | 3;
-  /** When true, only step 3 is shown (no steps 1–2 UI). */
+  // When true, only step 3 is shown (no steps 1–2 UI).
   verificationOnly?: boolean;
-  /** Step 3 copy when replacing an existing uploaded document. */
+  // Step 3 copy when replacing an existing uploaded document. 
   replaceExistingDocument?: boolean;
 }
 

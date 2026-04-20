@@ -13,7 +13,7 @@ export const authConfig = {
         token.id = user.id;
         token.isOnboarded = user.isOnboarded;
         token.needsRoleSetup = user.needsRoleSetup ?? false;
-        // use token.picture — nextauth's canonical field for user image in jwt
+        // use token.picture nextauth's canonical field for user image in jwt
         if (user.image) token.picture = user.image;
       }
 
@@ -31,7 +31,7 @@ export const authConfig = {
       }
 
       // refresh profile image after upload or removal
-      // "image" in session handles both a new url and explicit null (removal)
+      // image in session handles both a new URL and explicit null (removal)
       if (trigger === "update" && "image" in session) {
         token.picture = (session.image as string | null) ?? null;
       }
@@ -45,8 +45,7 @@ export const authConfig = {
         session.user.id = token.id as string;
         session.user.isOnboarded = token.isOnboarded as boolean;
         session.user.needsRoleSetup = (token.needsRoleSetup as boolean) ?? false;
-        // propagate token.picture to session.user.image so all client components see it
-        // keep null (removed photo) — do not coalesce null to undefined or clients fall back to stale props
+
         if (token.picture !== undefined) {
           session.user.image =
             token.picture === null ? null : (token.picture as string);

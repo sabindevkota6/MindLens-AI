@@ -10,6 +10,7 @@ import { authConfig } from "@/auth.config";
 // nextauth config with credentials and google providers
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
+  trustHost: true,
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
