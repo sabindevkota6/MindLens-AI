@@ -47,15 +47,24 @@ const counselorLinks = {
 
 const adminLinks = {
   quickLinks: [
+    { href: "/dashboard/admin", label: "Home" },
     { href: "/dashboard/admin/verification", label: "Pending Verification" },
+    { href: "/dashboard/admin/reports", label: "Reports" },
   ],
   col3: {
     title: "Management",
-    links: [{ href: "/dashboard/admin/users", label: "User Management" }],
+    links: [
+      { href: "/dashboard/admin/users", label: "User Management" },
+      { href: "/dashboard/admin/users/counselors", label: "Counselors" },
+      { href: "/dashboard/admin/users/patients", label: "Patients" },
+    ],
   },
   col4: {
     title: "Dashboard",
-    links: [{ href: "/dashboard/admin/statistics", label: "Statistics" }],
+    links: [
+      { href: "/dashboard/admin/statistics", label: "Statistics" },
+      { href: "/dashboard/admin/settings", label: "Settings" },
+    ],
   },
 };
 
